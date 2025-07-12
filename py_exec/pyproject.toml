@@ -1,0 +1,24 @@
+[project]
+name = "py-exec"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "autogen-agentchat",
+    "autogen-ext[jupyter-executor]",
+    "fastmcp",
+    "matplotlib>=3.10.3",
+    "numpy>=2.3.1",
+    "seaborn",
+    "plotly",
+    "pandas",
+    "bokeh",
+    "scipy",
+    "pillow",
+    "scikit-learn",
+    "requests",
+    "pytest",
+    "sympy",
+    "ffmpeg-python",
+]
