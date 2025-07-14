@@ -1,34 +1,57 @@
 // entrypoints/background.ts
-
-// Type definitions matching MCP server expectations
-interface SelectorParam {
-  element: string;
-  ref: string;
-}
-
-interface TypeParam extends SelectorParam {
-  text: string;
-  submit?: boolean;
-}
-
-interface SelectOptionParam extends SelectorParam {
-  values: string[];
-}
-
-interface SessionInfo {
-  id: string;
-  tabId: number;
-  isHeadless: boolean;
-  url?: string;
-  title?: string;
-  createdAt: number;
-}
+import { createChromeHandler } from 'trpc-chrome/adapter';
+import { createAppRouter } from '../shared/router';
+import type {
+  SelectorParam,
+  TypeParam,
+  SelectOptionParam,
+  SessionInfo,
+} from '../shared/types';
 
 export default defineBackground(() => {
   const wsManager = new WebSocketManager();
   const handlers = new CommandHandlers();
 
-  // Route popup messages to WS manager or respond with status
+  // Create tRPC router with command handlers
+  const appRouter = createAppRouter({
+    // Browser automation methods
+    navigate: handlers.navigate.bind(handlers),
+    goBack: handlers.goBack.bind(handlers),
+    goForward: handlers.goForward.bind(handlers),
+    snapshot: handlers.snapshot.bind(handlers),
+    click: handlers.click.bind(handlers),
+    hover: handlers.hover.bind(handlers),
+    type: handlers.type.bind(handlers),
+    selectOption: handlers.selectOption.bind(handlers),
+    pressKey: handlers.pressKey.bind(handlers),
+    getConsoleLogs: handlers.getConsoleLogs.bind(handlers),
+    screenshot: handlers.screenshot.bind(handlers),
+    getUrl: handlers.getUrl.bind(handlers),
+    getTitle: handlers.getTitle.bind(handlers),
+
+    // Session management
+    getSessions: handlers.getSessions.bind(handlers),
+    closeSession: handlers.closeSession.bind(handlers),
+    showSession: handlers.showSession.bind(handlers),
+    hideSession: handlers.hideSession.bind(handlers),
+
+    // WebSocket management
+    wsConnect: wsManager.connect.bind(wsManager),
+    wsDisconnect: wsManager.disconnect.bind(wsManager),
+    wsGetStatus: () => wsManager.status,
+    wsSetUrl: wsManager.setUrl.bind(wsManager),
+  });
+
+  // Set up tRPC Chrome handler
+  createChromeHandler({
+    router: appRouter,
+    createContext: () => ({}),
+    onError: ({ error, path }: { error: any; path: string }) => {
+      console.error(`tRPC error on ${path}:`, error);
+    },
+  });
+
+  // Legacy message handling for backward compatibility
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     switch (message.type) {
       case 'connect':
@@ -270,8 +293,6 @@ class CommandHandlers {
         return this.selectOption(params);
       case 'pressKey':
         return this.pressKey(params);
-      case 'wait':
-        return this.wait(params);
       case 'getConsoleLogs':
         return this.getConsoleLogs(params);
       case 'screenshot':
@@ -285,7 +306,7 @@ class CommandHandlers {
     }
   }
 
-  private async navigate({ url, sessionId }: { url: string; sessionId?: string }) {
+  async navigate({ url, sessionId }: { url: string; sessionId?: string }) {
     const tab = await this.getTargetTab(sessionId);
     await chrome.tabs.update(tab.id!, { url });
 
@@ -295,7 +316,7 @@ class CommandHandlers {
     return { success: true, url };
   }
 
-  private async goBack({ sessionId }: { sessionId?: string } = {}) {
+  async goBack({ sessionId }: { sessionId?: string } = {}) {
     const tab = await this.getTargetTab(sessionId);
     await chrome.tabs.goBack(tab.id!);
 
@@ -305,7 +326,7 @@ class CommandHandlers {
     return { success: true };
   }
 
-  private async goForward({ sessionId }: { sessionId?: string } = {}) {
+  async goForward({ sessionId }: { sessionId?: string } = {}) {
     const tab = await this.getTargetTab(sessionId);
     await chrome.tabs.goForward(tab.id!);
 
@@ -315,7 +336,7 @@ class CommandHandlers {
     return { success: true };
   }
 
-  private async snapshot({ sessionId }: { sessionId?: string } = {}) {
+  async snapshot({ sessionId }: { sessionId?: string } = {}) {
     const tab = await this.getTargetTab(sessionId);
     const result = await this.sendToContentScript(tab.id!, {
       action: "getAccessibilitySnapshot",
@@ -323,7 +344,7 @@ class CommandHandlers {
     return result.snapshot;
   }
 
-  private async click({ element, ref, sessionId }: SelectorParam & { sessionId?: string }) {
+  async click({ element, ref, sessionId }: SelectorParam & { sessionId?: string }) {
     const tab = await this.getTargetTab(sessionId);
     return await this.sendToContentScript(tab.id!, {
       action: "click",
@@ -331,7 +352,7 @@ class CommandHandlers {
     });
   }
 
-  private async hover({ element, ref, sessionId }: SelectorParam & { sessionId?: string }) {
+  async hover({ element, ref, sessionId }: SelectorParam & { sessionId?: string }) {
     const tab = await this.getTargetTab(sessionId);
     return await this.sendToContentScript(tab.id!, {
       action: "hover",
@@ -339,7 +360,7 @@ class CommandHandlers {
     });
   }
 
-  private async type({ element, ref, text, submit, sessionId }: TypeParam & { sessionId?: string }) {
+  async type({ element, ref, text, submit, sessionId }: TypeParam & { sessionId?: string }) {
     const tab = await this.getTargetTab(sessionId);
     return await this.sendToContentScript(tab.id!, {
       action: "type",
@@ -349,7 +370,7 @@ class CommandHandlers {
     });
   }
 
-  private async selectOption({ element, ref, values, sessionId }: SelectOptionParam & { sessionId?: string }) {
+  async selectOption({ element, ref, values, sessionId }: SelectOptionParam & { sessionId?: string }) {
     const tab = await this.getTargetTab(sessionId);
     return await this.sendToContentScript(tab.id!, {
       action: "selectOption",
@@ -358,7 +379,7 @@ class CommandHandlers {
     });
   }
 
-  private async pressKey({ key, sessionId }: { key: string; sessionId?: string }) {
+  async pressKey({ key, sessionId }: { key: string; sessionId?: string }) {
     const tab = await this.getTargetTab(sessionId);
     return await this.sendToContentScript(tab.id!, {
       action: "pressKey",
@@ -366,12 +387,7 @@ class CommandHandlers {
     });
   }
 
-  private async wait({ seconds }: { seconds: number }) {
-    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
-    return { success: true, waited: seconds };
-  }
-
-  private async getConsoleLogs({ sessionId }: { sessionId?: string } = {}) {
+  async getConsoleLogs({ sessionId }: { sessionId?: string } = {}) {
     const tab = await this.getTargetTab(sessionId);
     const result = await this.sendToContentScript(tab.id!, {
       action: "getConsoleLogs",
@@ -379,7 +395,7 @@ class CommandHandlers {
     return result.logs;
   }
 
-  private async screenshot({ sessionId }: { sessionId?: string } = {}) {
+  async screenshot({ sessionId }: { sessionId?: string } = {}) {
     const tab = await this.getTargetTab(sessionId);
     const dataUrl = await chrome.tabs.captureVisibleTab(tab.id!, {
       format: "png",
@@ -387,13 +403,13 @@ class CommandHandlers {
     return { screenshot: dataUrl };
   }
 
-  private async getUrl({ sessionId }: { sessionId?: string } = {}) {
+  async getUrl({ sessionId }: { sessionId?: string } = {}) {
     const tab = await this.getTargetTab(sessionId);
     if (!tab.url) throw new Error("No target tab URL found");
     return tab.url;
   }
 
-  private async getTitle({ sessionId }: { sessionId?: string } = {}) {
+  async getTitle({ sessionId }: { sessionId?: string } = {}) {
     const tab = await this.getTargetTab(sessionId);
     if (!tab.title) throw new Error("No target tab title found");
     return tab.title;
@@ -408,7 +424,7 @@ class CommandHandlers {
         if (updatedTabId === tabId && changeInfo.status === 'complete') {
           chrome.tabs.onUpdated.removeListener(onUpdated);
           // Additional wait to ensure content is loaded
-          setTimeout(resolve, 500);
+          setTimeout(resolve, 3000);
         }
       };
 

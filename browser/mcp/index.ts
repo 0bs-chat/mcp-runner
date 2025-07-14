@@ -2,8 +2,18 @@
 import { createWebSocketServer } from "./ws";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
 import { WebSocket } from "ws";
+import { z } from "zod";
+
+// Import shared schemas for consistency
+import {
+  navigateSchema,
+  sessionSchema,
+  selectorSchema,
+  typeSchema,
+  selectOptionSchema,
+  pressKeySchema,
+} from "../src/shared/schemas";
 
 // ------------------------------------------------------------------
 // 1.  Create the MCP server
@@ -105,10 +115,7 @@ server.registerTool(
   {
     title: "Navigate",
     description: "Navigate the browser to the given URL. Optional to pass session id, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the sessionid will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
-    inputSchema: {
-      url: z.string().describe("The URL to navigate to"),
-      sessionId: z.string().optional().describe("Session ID to navigate (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session in a new minimized window"),
-    },
+    inputSchema: navigateSchema.shape,
   },
   async ({ url, sessionId }) => {
     try {
@@ -125,9 +132,7 @@ server.registerTool(
   {
     title: "Go Back",
     description: "Go back to the previous page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the sessionid will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
-    inputSchema: {
-      sessionId: z.string().optional().describe("Session ID to navigate back (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session"),
-    },
+    inputSchema: sessionSchema.shape,
   },
   async ({ sessionId }) => {
     try {
@@ -144,9 +149,7 @@ server.registerTool(
   {
     title: "Go Forward",
     description: "Go forward to the next page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the sessionid will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
-    inputSchema: {
-      sessionId: z.string().optional().describe("Session ID to navigate forward (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session"),
-    },
+    inputSchema: sessionSchema.shape,
   },
   async ({ sessionId }) => {
     try {
@@ -163,9 +166,7 @@ server.registerTool(
   {
     title: "Accessibility Snapshot",
     description: "Capture an accessibility snapshot of the current page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
-    inputSchema: {
-      sessionId: z.string().optional().describe("Session ID to capture snapshot from (optional, uses default session if not provided)"),
-    },
+    inputSchema: sessionSchema.shape,
   },
   async ({ sessionId }) => {
     try {
@@ -182,11 +183,7 @@ server.registerTool(
   {
     title: "Click Element",
     description: "Click an element on the page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
-    inputSchema: {
-      element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
-      ref: z.string().describe("Exact target element reference from the page snapshot"),
-      sessionId: z.string().optional().describe("Session ID to click element in (optional, uses default session if not provided)"),
-    },
+    inputSchema: selectorSchema.shape,
   },
   async ({ element, ref, sessionId }) => {
     try {
@@ -203,11 +200,7 @@ server.registerTool(
   {
     title: "Hover Element",
     description: "Hover over an element on the page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
-    inputSchema: {
-      element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
-      ref: z.string().describe("Exact target element reference from the page snapshot"),
-      sessionId: z.string().optional().describe("Session ID to hover element in (optional, uses default session if not provided)"),
-    },
+    inputSchema: selectorSchema.shape,
   },
   async ({ element, ref, sessionId }) => {
     try {
@@ -224,13 +217,7 @@ server.registerTool(
   {
     title: "Type Text",
     description: "Type text into an editable element. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
-    inputSchema: {
-      element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
-      ref: z.string().describe("Exact target element reference from the page snapshot"),
-      text: z.string().describe("The text to type into the element"),
-      submit: z.boolean().optional().describe("Whether to submit entered text (press Enter after)"),
-      sessionId: z.string().optional().describe("Session ID to type in (optional, uses default session if not provided)"),
-    },
+    inputSchema: typeSchema.shape,
   },
   async ({ element, ref, text, submit, sessionId }) => {
     try {
@@ -247,12 +234,7 @@ server.registerTool(
   {
     title: "Select Option",
     description: "Select an option in a dropdown. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
-    inputSchema: {
-      element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
-      ref: z.string().describe("Exact target element reference from the page snapshot"),
-      values: z.array(z.string()).describe("Array of values to select in the dropdown. This can be a single value or multiple values."),
-      sessionId: z.string().optional().describe("Session ID to select option in (optional, uses default session if not provided)"),
-    },
+    inputSchema: selectOptionSchema.shape,
   },
   async ({ element, ref, values, sessionId }) => {
     try {
@@ -269,10 +251,7 @@ server.registerTool(
   {
     title: "Press Key",
     description: "Press a key on the keyboard. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
-    inputSchema: {
-      key: z.string().describe("Name of the key to press or a character to generate, such as `ArrowLeft` or `a`"),
-      sessionId: z.string().optional().describe("Session ID to press key in (optional, uses default session if not provided)"),
-    },
+    inputSchema: pressKeySchema.shape,
   },
   async ({ key, sessionId }) => {
     try {
@@ -295,7 +274,7 @@ server.registerTool(
   },
   async ({ seconds }) => {
     try {
-      await sendCommand("wait", { seconds });
+      await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
       return {
         content: [
           {
@@ -322,9 +301,7 @@ server.registerTool(
   {
     title: "Get Console Logs",
     description: "Retrieve console logs from the browser. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
-    inputSchema: {
-      sessionId: z.string().optional().describe("Session ID to get console logs from (optional, uses default session if not provided)"),
-    },
+    inputSchema: sessionSchema.shape,
   },
   async ({ sessionId }) => {
     try {

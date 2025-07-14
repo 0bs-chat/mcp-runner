@@ -1,28 +1,24 @@
 // lib/ws.ts
 import { useCallback, useEffect, useState } from "react";
-
-interface WebSocketStatus {
-  connected: boolean;
-  connecting: boolean;
-  url: string;
-}
+import { createTRPCClient } from '@trpc/client';
+import { chromeLink } from 'trpc-chrome/link';
+import type { AppRouter } from '../shared/router';
+import type { WebSocketStatus, SessionInfo } from '../shared/types';
 
 interface WebSocketMessage {
   type: string;
   [key: string]: any;
 }
 
-interface SessionInfo {
-  id: string;
-  tabId: number;
-  isHeadless: boolean;
-  url?: string;
-  title?: string;
-  createdAt: number;
-}
+// Create tRPC client
+const port = chrome.runtime.connect();
+const trpcClient = createTRPCClient<AppRouter>({
+  links: [chromeLink({ port })],
+});
 
 /**
  * Custom hook for managing WebSocket connection with the background script
+ * Now using tRPC for type-safe communication
  */
 export function useWebSocket() {
   const [status, setStatus] = useState<WebSocketStatus>({
@@ -32,7 +28,7 @@ export function useWebSocket() {
   });
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
 
-  // Listen for status updates from background script
+  // Listen for status updates from background script (legacy)
   useEffect(() => {
     const handleMessage = (message: WebSocketMessage) => {
       if (message.type === "wsStatus") {
@@ -46,18 +42,23 @@ export function useWebSocket() {
 
     chrome.runtime.onMessage.addListener(handleMessage);
 
-    // Get initial status on mount
-    chrome.runtime.sendMessage({ type: "getStatus" }, (response) => {
-      if (response) {
-        setStatus({
-          connected: response.connected,
-          connecting: response.connecting,
-          url: response.url
-        });
-      }
+    // Get initial status using tRPC
+    trpcClient.wsGetStatus.query().then((response) => {
+      setStatus(response);
+    }).catch(() => {
+      // Fallback to legacy message handling
+      chrome.runtime.sendMessage({ type: "getStatus" }, (response) => {
+        if (response) {
+          setStatus({
+            connected: response.connected,
+            connecting: response.connecting,
+            url: response.url
+          });
+        }
+      });
     });
 
-    // Get initial sessions
+    // Get initial sessions using tRPC
     refreshSessions();
 
     return () => {
@@ -65,41 +66,79 @@ export function useWebSocket() {
     };
   }, []);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     setStatus(prev => ({ ...prev, connecting: true }));
-    chrome.runtime.sendMessage({ type: "connect" });
+    try {
+      await trpcClient.wsConnect.mutate();
+    } catch {
+      // Fallback to legacy
+      chrome.runtime.sendMessage({ type: "connect" });
+    }
   }, []);
 
-  const disconnect = useCallback(() => {
-    chrome.runtime.sendMessage({ type: "disconnect" });
+  const disconnect = useCallback(async () => {
+    try {
+      await trpcClient.wsDisconnect.mutate();
+    } catch {
+      // Fallback to legacy
+      chrome.runtime.sendMessage({ type: "disconnect" });
+    }
   }, []);
 
-  const setUrl = useCallback((newUrl: string) => {
-    chrome.runtime.sendMessage({ type: "setUrl", url: newUrl }, () => {
+  const setUrl = useCallback(async (newUrl: string) => {
+    try {
+      await trpcClient.wsSetUrl.mutate({ url: newUrl });
       setStatus(prev => ({ ...prev, url: newUrl }));
-    });
+    } catch {
+      // Fallback to legacy
+      chrome.runtime.sendMessage({ type: "setUrl", url: newUrl }, () => {
+        setStatus(prev => ({ ...prev, url: newUrl }));
+      });
+    }
   }, []);
 
-  const refreshSessions = useCallback(() => {
-    chrome.runtime.sendMessage({ type: "getSessions" }, (response) => {
-      if (response?.sessions) {
-        setSessions(response.sessions);
-      }
-    });
+  const refreshSessions = useCallback(async () => {
+    try {
+      const sessions = await trpcClient.getSessions.query();
+      setSessions(sessions);
+    } catch {
+      // Fallback to legacy
+      chrome.runtime.sendMessage({ type: "getSessions" }, (response) => {
+        if (response?.sessions) {
+          setSessions(response.sessions);
+        }
+      });
+    }
   }, []);
 
-  const closeSession = useCallback((sessionId: string) => {
-    chrome.runtime.sendMessage({ type: "closeSession", sessionId }, () => {
+  const closeSession = useCallback(async (sessionId: string) => {
+    try {
+      await trpcClient.closeSession.mutate({ sessionId });
       refreshSessions();
-    });
+    } catch {
+      // Fallback to legacy
+      chrome.runtime.sendMessage({ type: "closeSession", sessionId }, () => {
+        refreshSessions();
+      });
+    }
   }, [refreshSessions]);
 
-  const showSession = useCallback((sessionId: string) => {
-    chrome.runtime.sendMessage({ type: "showSession", sessionId });
+  const showSession = useCallback(async (sessionId: string) => {
+    try {
+      await trpcClient.showSession.mutate({ sessionId });
+    } catch {
+      // Fallback to legacy
+      chrome.runtime.sendMessage({ type: "showSession", sessionId });
+    }
   }, []);
 
-  const hideSession = useCallback((sessionId: string) => {
-    chrome.runtime.sendMessage({ type: "hideSession", sessionId });
+  const hideSession = useCallback(async (sessionId: string) => {
+    try {
+      await trpcClient.hideSession.mutate({ sessionId });
+    } catch {
+      // Fallback to legacy
+      chrome.runtime.sendMessage({ type: "hideSession", sessionId });
+    }
   }, []);
 
   return {

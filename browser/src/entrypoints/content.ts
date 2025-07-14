@@ -1,3 +1,5 @@
+import type { ConsoleLog } from '../shared/types';
+
 export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
@@ -27,7 +29,7 @@ export default defineContentScript({
  * Captures console logs for debugging purposes
  */
 class ConsoleCapture {
-  private logs: any[] = [];
+  private logs: ConsoleLog[] = [];
 
   constructor() {
     this.interceptConsole();
