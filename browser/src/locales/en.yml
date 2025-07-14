@@ -1,0 +1,4 @@
+extension:
+  name: BrowserMCP
+  description: https://github.com/0bs-chat/mcp-runner
+hello: Hello

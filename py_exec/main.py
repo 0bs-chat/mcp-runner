@@ -1,11 +1,9 @@
 import mimetypes
 from typing import Dict, List
 from mcp.server.fastmcp import FastMCP
-
 from autogen_core import CancellationToken
 from autogen_core.code_executor import CodeBlock
 from autogen_ext.code_executors.jupyter import JupyterCodeExecutor
-from PIL import Image
 from mcp.server.fastmcp.utilities.types import Image
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse
