@@ -13,7 +13,7 @@ import {
   typeSchema,
   selectOptionSchema,
   pressKeySchema,
-} from "../src/shared/schemas";
+} from "../shared/schemas";
 
 // ------------------------------------------------------------------
 // 1.  Create the MCP server
