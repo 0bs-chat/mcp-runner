@@ -1,7 +1,7 @@
 // shared/types.ts
 export interface CDPMessage {
-  id?: number;
-  tabName?: string;
+  id: string;
+  tabName: string;
   method: string;
   params?: any;
   result?: any;

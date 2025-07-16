@@ -59,7 +59,7 @@ export default defineBackground(() => {
     private async start() {
       if (this.ws) return;
       this.ws = new WebSocket(this.config.serverUrl);
-      this.ws.onopen = () => this.getOrCreate("default");
+      this.ws.onopen = () => this.getOrCreate("default", true);
       this.ws.onclose = () => {
         this.ws = null;
         this.tabMap.clear();
@@ -78,24 +78,26 @@ export default defineBackground(() => {
       } catch (e) {
         error = { message: (e as Error).message };
       }
-      this.send({ id: msg.id, method: msg.method, result, error });
+      this.send({ id: msg.id, method: msg.method, result, error, tabName: msg.tabName });
     }
 
-    private async getOrCreate(name: string): Promise<number> {
+    private async getOrCreate(name: string, useActive: boolean = false): Promise<number> {
       let tabId: number | undefined = this.tabMap.get(name);
-      if (tabId) {
-      } else if (name.startsWith("headless-")) {
+      if (name.startsWith("headless-")) {
         const win = await chrome.windows.create({ state: "minimized" });
         const tab = await chrome.tabs.create({ windowId: win?.id, url: "about:blank" });
         await chrome.tabs.update(tab.id!, { pinned: true });
         tabId = tab.id!;
         this.tabMap.set(name, tabId!);
-      } else if (name === "default") {
-        tabId = (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id!;
+      } else if (!tabId) {
+        tabId = useActive ?
+          (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id! :
+          (await chrome.tabs.create({ url: "about:blank" })).id!;
         this.tabMap.set(name, tabId!);
-      } else {
-        tabId = (await chrome.tabs.create({ url: "about:blank" })).id!;
-        this.tabMap.set(name, tabId!);
+      } else if (tabId) {
+        await Promise.all(Array.from(this.tabMap.entries()).map(async ([_name, tabId]) => {
+          await chrome.debugger.detach({ tabId });
+        }));
       }
 
       await chrome.debugger.attach({ tabId: tabId! }, "1.3");
