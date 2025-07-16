@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { CDPCommand, CDPResponse } from '../../shared/types';
 
 export function debugLog(...args: unknown[]): void {
   const enabled = true;
@@ -22,6 +21,20 @@ export function debugLog(...args: unknown[]): void {
     console.log('[Extension]', ...args);
   }
 }
+
+type ProtocolCommand = {
+  id: number;
+  method: string;
+  params?: any;
+};
+
+type ProtocolResponse = {
+  id?: number;
+  method?: string;
+  params?: any;
+  result?: any;
+  error?: string;
+};
 
 export class RelayConnection {
   private _debuggee: chrome.debugger.Debuggee;
@@ -84,7 +97,7 @@ export class RelayConnection {
   }
 
   private async _onMessageAsync(event: MessageEvent): Promise<void> {
-    let message: CDPCommand;
+    let message: ProtocolCommand;
     try {
       message = JSON.parse(event.data);
     } catch (error: any) {
@@ -95,7 +108,7 @@ export class RelayConnection {
 
     debugLog('Received message:', message);
 
-    const response: CDPResponse = {
+    const response: ProtocolResponse = {
       id: message.id,
     };
     try {
@@ -108,7 +121,7 @@ export class RelayConnection {
     this._sendMessage(response);
   }
 
-  private async _handleCommand(message: CDPCommand): Promise<any> {
+  private async _handleCommand(message: ProtocolCommand): Promise<any> {
     if (message.method === 'attachToTab') {
       debugLog('Attaching debugger to tab:', this._debuggee);
       await chrome.debugger.attach(this._debuggee, '1.3');

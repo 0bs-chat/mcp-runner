@@ -1,9 +1,34 @@
-import { RelayConnection, debugLog } from './relayConnection';
-import { PopupMessage } from '../../shared/types';
+/**
+ * Copyright (c) Microsoft Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { RelayConnection, debugLog } from './relayConnection.js';
+
+/**
+ * Simple Chrome Extension that pumps CDP messages between chrome.debugger and WebSocket
+ */
+
+type PopupMessage = {
+  type: 'getStatus' | 'connect' | 'disconnect';
+  tabId: number;
+  bridgeUrl?: string;
+};
 
 type SendResponse = (response: any) => void;
 
-export class TabShareExtension {
+class TabShareExtension {
   private activeConnections: Map<number, RelayConnection>;
 
   constructor() {
@@ -170,3 +195,5 @@ export class TabShareExtension {
       await this._cleanupConnection(tabId);
   }
 }
+
+new TabShareExtension();
