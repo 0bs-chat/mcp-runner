@@ -1,21 +1,23 @@
 // shared/types.ts
-export interface CDPMessage {
-  id: string;
-  tabName: string;
+
+export type CDPCommand = {
+  id: number;
+  sessionId?: string;
   method: string;
   params?: any;
+};
+
+export type CDPResponse = {
+  id?: number;
+  sessionId?: string;
+  method?: string;
+  params?: any;
   result?: any;
-  error?: any;
-}
+  error?: { code?: number; message: string };
+};
 
-export interface ExtensionConfig {
-  serverUrl: string;
-}
-
-export type ExtensionMessage =
-  | { type: 'connection.status' }
-  | { type: 'connection.connect' }
-  | { type: 'connection.disconnect' }
-  | { type: 'config.update'; payload: Partial<ExtensionConfig> }
-  | { type: 'tab.attach'; payload: { name: string } }
-  | { type: 'tab.remove'; payload: { name: string } };
+export type PopupMessage = {
+  type: 'getStatus' | 'connect' | 'disconnect';
+  tabId: number;
+  bridgeUrl?: string;
+};
