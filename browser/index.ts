@@ -82,10 +82,10 @@ async function sendCommand<T = unknown>(
 }
 
 // Helper function to format tool responses
-async function formatToolResponse(status: string, sessionId?: string): Promise<{ content: Array<{ type: "text"; text: string }> }> {
-  const url = await sendCommand("getUrl", sessionId ? { sessionId } : {});
-  const title = await sendCommand("getTitle", sessionId ? { sessionId } : {});
-  const snapshot = await sendCommand("snapshot", sessionId ? { sessionId } : {});
+async function formatToolResponse(status: string, tabName?: string): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const url = await sendCommand("getUrl", tabName ? { tabName } : {});
+  const title = await sendCommand("getTitle", tabName ? { tabName } : {});
+  const snapshot = await sendCommand("snapshot", tabName ? { tabName } : {});
   return {
     content: [
       {
@@ -104,18 +104,18 @@ server.registerTool(
   "browser_navigate",
   {
     title: "Navigate",
-    description: "Navigate the browser to the given URL. Optional to pass session id, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the sessionid will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
+    description: "Navigate the browser to the given URL. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the tab name will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
     inputSchema: {
       url: z.string().describe("The URL to navigate to"),
-      sessionId: z.string().optional().describe("Session ID to navigate (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session in a new minimized window"),
+      tabName: z.string().optional().describe("Tab name to navigate (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session in a new minimized window"),
     },
   },
-  async ({ url, sessionId }) => {
+  async ({ url, tabName }) => {
     try {
-      await sendCommand("navigate", { url, sessionId });
-      return formatToolResponse("Navigated to " + url, sessionId);
+      await sendCommand("navigate", { url, tabName });
+      return formatToolResponse("Navigated to " + url, tabName);
     } catch (error) {
-      return formatToolResponse("Error navigating to " + url, sessionId);
+      return formatToolResponse("Error navigating to " + url, tabName);
     }
   }
 );
@@ -124,17 +124,17 @@ server.registerTool(
   "browser_go_back",
   {
     title: "Go Back",
-    description: "Go back to the previous page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the sessionid will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
+    description: "Go back to the previous page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the tab name will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
     inputSchema: {
-      sessionId: z.string().optional().describe("Session ID to navigate back (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session"),
+      tabName: z.string().optional().describe("Tab name to navigate back (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session"),
     },
   },
-  async ({ sessionId }) => {
+  async ({ tabName }) => {
     try {
-      await sendCommand("goBack", { sessionId });
-      return formatToolResponse("Navigated back", sessionId);
+      await sendCommand("goBack", { tabName });
+      return formatToolResponse("Navigated back", tabName);
     } catch (error) {
-      return formatToolResponse("Error navigating back", sessionId);
+      return formatToolResponse("Error navigating back", tabName);
     }
   }
 );
@@ -143,17 +143,17 @@ server.registerTool(
   "browser_go_forward",
   {
     title: "Go Forward",
-    description: "Go forward to the next page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the sessionid will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
+    description: "Go forward to the next page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the tab name will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
     inputSchema: {
-      sessionId: z.string().optional().describe("Session ID to navigate forward (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session"),
+      tabName: z.string().optional().describe("Tab name to navigate forward (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session"),
     },
   },
-  async ({ sessionId }) => {
+  async ({ tabName }) => {
     try {
-      await sendCommand("goForward", { sessionId });
-      return formatToolResponse("Navigated forward", sessionId);
+      await sendCommand("goForward", { tabName });
+      return formatToolResponse("Navigated forward", tabName);
     } catch (error) {
-      return formatToolResponse("Error navigating forward", sessionId);
+      return formatToolResponse("Error navigating forward", tabName);
     }
   }
 );
@@ -162,17 +162,17 @@ server.registerTool(
   "browser_snapshot",
   {
     title: "Accessibility Snapshot",
-    description: "Capture an accessibility snapshot of the current page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
+    description: "Capture an accessibility snapshot of the current page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
     inputSchema: {
-      sessionId: z.string().optional().describe("Session ID to capture snapshot from (optional, uses default session if not provided)"),
+      tabName: z.string().optional().describe("Tab name to capture snapshot from (optional, uses default session if not provided)"),
     },
   },
-  async ({ sessionId }) => {
+  async ({ tabName }) => {
     try {
-      await sendCommand("snapshot", { sessionId });
-      return formatToolResponse("Snapshot captured", sessionId);
+      await sendCommand("snapshot", { tabName });
+      return formatToolResponse("Snapshot captured", tabName);
     } catch (error) {
-      return formatToolResponse("Error capturing snapshot", sessionId);
+      return formatToolResponse("Error capturing snapshot", tabName);
     }
   }
 );
@@ -181,19 +181,19 @@ server.registerTool(
   "browser_click",
   {
     title: "Click Element",
-    description: "Click an element on the page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
+    description: "Click an element on the page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
     inputSchema: {
       element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
       ref: z.string().describe("Exact target element reference from the page snapshot"),
-      sessionId: z.string().optional().describe("Session ID to click element in (optional, uses default session if not provided)"),
+      tabName: z.string().optional().describe("Tab name to click element in (optional, uses default session if not provided)"),
     },
   },
-  async ({ element, ref, sessionId }) => {
+  async ({ element, ref, tabName }) => {
     try {
-      await sendCommand("click", { element, ref, sessionId });
-      return formatToolResponse("Clicked element", sessionId);
+      await sendCommand("click", { element, ref, tabName });
+      return formatToolResponse("Clicked element", tabName);
     } catch (error) {
-      return formatToolResponse("Error clicking element", sessionId);
+      return formatToolResponse("Error clicking element", tabName);
     }
   }
 );
@@ -202,19 +202,19 @@ server.registerTool(
   "browser_hover",
   {
     title: "Hover Element",
-    description: "Hover over an element on the page. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
+    description: "Hover over an element on the page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
     inputSchema: {
       element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
       ref: z.string().describe("Exact target element reference from the page snapshot"),
-      sessionId: z.string().optional().describe("Session ID to hover element in (optional, uses default session if not provided)"),
+      tabName: z.string().optional().describe("Tab name to hover element in (optional, uses default session if not provided)"),
     },
   },
-  async ({ element, ref, sessionId }) => {
+  async ({ element, ref, tabName }) => {
     try {
-      await sendCommand("hover", { element, ref, sessionId });
-      return formatToolResponse("Hovered over element", sessionId);
+      await sendCommand("hover", { element, ref, tabName });
+      return formatToolResponse("Hovered over element", tabName);
     } catch (error) {
-      return formatToolResponse("Error hovering over element", sessionId);
+      return formatToolResponse("Error hovering over element", tabName);
     }
   }
 );
@@ -223,21 +223,21 @@ server.registerTool(
   "browser_type",
   {
     title: "Type Text",
-    description: "Type text into an editable element. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
+    description: "Type text into an editable element. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
     inputSchema: {
       element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
       ref: z.string().describe("Exact target element reference from the page snapshot"),
       text: z.string().describe("The text to type into the element"),
       submit: z.boolean().optional().describe("Whether to submit entered text (press Enter after)"),
-      sessionId: z.string().optional().describe("Session ID to type in (optional, uses default session if not provided)"),
+      tabName: z.string().optional().describe("Tab name to type in (optional, uses default session if not provided)"),
     },
   },
-  async ({ element, ref, text, submit, sessionId }) => {
+  async ({ element, ref, text, submit, tabName }) => {
     try {
-      await sendCommand("type", { element, ref, text, submit, sessionId });
-      return formatToolResponse("Typed text into element", sessionId);
+      await sendCommand("type", { element, ref, text, submit, tabName });
+      return formatToolResponse("Typed text into element", tabName);
     } catch (error) {
-      return formatToolResponse("Error typing text into element", sessionId);
+      return formatToolResponse("Error typing text into element", tabName);
     }
   }
 );
@@ -246,20 +246,20 @@ server.registerTool(
   "browser_select_option",
   {
     title: "Select Option",
-    description: "Select an option in a dropdown. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
+    description: "Select an option in a dropdown. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
     inputSchema: {
       element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
       ref: z.string().describe("Exact target element reference from the page snapshot"),
       values: z.array(z.string()).describe("Array of values to select in the dropdown. This can be a single value or multiple values."),
-      sessionId: z.string().optional().describe("Session ID to select option in (optional, uses default session if not provided)"),
+      tabName: z.string().optional().describe("Tab name to select option in (optional, uses default session if not provided)"),
     },
   },
-  async ({ element, ref, values, sessionId }) => {
+  async ({ element, ref, values, tabName }) => {
     try {
-      await sendCommand("selectOption", { element, ref, values, sessionId });
-      return formatToolResponse("Selected option", sessionId);
+      await sendCommand("selectOption", { element, ref, values, tabName });
+      return formatToolResponse("Selected option", tabName);
     } catch (error) {
-      return formatToolResponse("Error selecting option", sessionId);
+      return formatToolResponse("Error selecting option", tabName);
     }
   }
 );
@@ -268,18 +268,18 @@ server.registerTool(
   "browser_press_key",
   {
     title: "Press Key",
-    description: "Press a key on the keyboard. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
+    description: "Press a key on the keyboard. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
     inputSchema: {
       key: z.string().describe("Name of the key to press or a character to generate, such as `ArrowLeft` or `a`"),
-      sessionId: z.string().optional().describe("Session ID to press key in (optional, uses default session if not provided)"),
+      tabName: z.string().optional().describe("Tab name to press key in (optional, uses default session if not provided)"),
     },
   },
-  async ({ key, sessionId }) => {
+  async ({ key, tabName }) => {
     try {
-      await sendCommand("pressKey", { key, sessionId });
-      return formatToolResponse("Pressed key", sessionId);
+      await sendCommand("pressKey", { key, tabName });
+      return formatToolResponse("Pressed key", tabName);
     } catch (error) {
-      return formatToolResponse("Error pressing key", sessionId);
+      return formatToolResponse("Error pressing key", tabName);
     }
   }
 );
@@ -321,14 +321,14 @@ server.registerTool(
   "browser_get_console_logs",
   {
     title: "Get Console Logs",
-    description: "Retrieve console logs from the browser. Optional to pass session id, by default the tab from which the extension is init will be the default session tab.",
+    description: "Retrieve console logs from the browser. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
     inputSchema: {
-      sessionId: z.string().optional().describe("Session ID to get console logs from (optional, uses default session if not provided)"),
+      tabName: z.string().optional().describe("Tab name to get console logs from (optional, uses default session if not provided)"),
     },
   },
-  async ({ sessionId }) => {
+  async ({ tabName }) => {
     try {
-      const logs = await sendCommand("getConsoleLogs", { sessionId });
+      const logs = await sendCommand("getConsoleLogs", { tabName });
       return {
         content: [
           {
