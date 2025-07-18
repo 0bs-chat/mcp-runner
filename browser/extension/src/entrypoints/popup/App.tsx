@@ -8,7 +8,7 @@ import { Eye, X, RotateCcw } from 'lucide-react'
 import { assignTab } from '../background/tabs'
 
 function App() {
-  const [serverUrl, setServerUrl] = useState('ws://localhost:8080')
+  const [serverUrl, setServerUrl] = useState('ws://localhost:9223')
   const [state, { connect, disconnect }] = useWebSocket()
   const tabs = useTabs()
 

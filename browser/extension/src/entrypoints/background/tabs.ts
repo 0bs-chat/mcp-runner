@@ -5,18 +5,13 @@ export async function getActiveTabId(): Promise<number | undefined> {
   return tabs.length > 0 ? tabs[0].id : undefined
 }
 
-export async function assignTab(tabName: string, tabId?: number) {
-  let resolvedTabId: number | undefined = tabId;
+export async function assignTab(tabName: string) {
+  let resolvedTabId: number | undefined;
 
   if (tabName === 'default') {
     resolvedTabId = await getActiveTabId();
-  } else if (!tabId) {
-    // Open a new tab and use its id
-    resolvedTabId = await new Promise<number | undefined>((resolve) => {
-      chrome.tabs.create({}, (tab) => {
-        resolve(tab.id);
-      });
-    });
+  } else if (!resolvedTabId) {
+    resolvedTabId = (await chrome.tabs.create({ url: 'about:blank' })).id;
   }
 
   const state = await store.get();
@@ -37,8 +32,8 @@ export async function resetAndCloseAllTabs() {
     Object.values(tabs).map(tabId =>
       typeof tabId === 'number'
         ? new Promise(resolve => {
-            chrome.tabs.remove(tabId, () => resolve(undefined));
-          })
+          chrome.tabs.remove(tabId, () => resolve(undefined));
+        })
         : Promise.resolve()
     )
   );
@@ -46,8 +41,14 @@ export async function resetAndCloseAllTabs() {
   await store.set({ tabs: {} });
 }
 
-export async function getTabIdByName(tabName: string): Promise<number | undefined> {
+export async function getOrCreateTab(tabName: string): Promise<number | undefined> {
   const state = await store.get();
   const tabs = state.tabs || {};
-  return tabs[tabName];
+  let tabId: number | undefined = tabs[tabName];
+
+  if (!tabId) {
+    tabId = (await chrome.tabs.create({ url: 'about:blank' })).id!;
+  }
+
+  return tabId;
 }
