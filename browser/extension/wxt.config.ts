@@ -8,8 +8,10 @@ export default defineConfig({
     host_permissions: [],
     name: '__MSG_extension_name__',
     permissions: [
+      "activeTab",
+      "tabs",
       "storage",
-      "tabs"
+      "debugger"
     ],
   },
   modules: [

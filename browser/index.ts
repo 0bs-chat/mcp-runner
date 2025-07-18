@@ -1,26 +1,18 @@
-// mcp/index.ts
 import { createWebSocketServer } from "./ws";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { WebSocket } from "ws";
 
-// ------------------------------------------------------------------
-// 1.  Create the MCP server
-// ------------------------------------------------------------------
 const server = new McpServer({
   name: "browser-mcp",
   version: "1.0.0",
-  description: "Browser automation via WebSocket",
+  description: "Browser Control MCP Server",
 });
 
-// ------------------------------------------------------------------
-// 2.  Create the WebSocket connection to the browser
-// ------------------------------------------------------------------
 const wss = await createWebSocketServer(8080);
 let browserClient: WebSocket | null = null;
 
-// Handle new WebSocket connections
 wss.on("connection", (ws) => {
   console.log("Browser client connected");
   browserClient = ws;
@@ -36,11 +28,6 @@ wss.on("connection", (ws) => {
   });
 });
 
-/**
- * Send a command to the browser and wait for the response.
- * The browser is expected to reply with:
- *   { id: string, result?: any, error?: string }
- */
 async function sendCommand<T = unknown>(
   method: string,
   params?: Record<string, unknown>
@@ -81,33 +68,30 @@ async function sendCommand<T = unknown>(
   });
 }
 
-// Helper function to format tool responses
 async function formatToolResponse(status: string, tabName?: string): Promise<{ content: Array<{ type: "text"; text: string }> }> {
-  const url = await sendCommand("getUrl", tabName ? { tabName } : {});
-  const title = await sendCommand("getTitle", tabName ? { tabName } : {});
   const snapshot = await sendCommand("snapshot", tabName ? { tabName } : {});
   return {
     content: [
       {
         type: "text",
-        text: `${status ? `${status}\n` : ""}- Page URL: ${url}\n- Page Title: ${title}\n- Page Snapshot\n\`\`\`yaml\n${snapshot}\n\`\`\``,
+        text: snapshot as string,
       },
     ],
   };
 }
 
-// ------------------------------------------------------------------
-// 3.  Register the browser tools
-// ------------------------------------------------------------------
+const tabNameType = z.string().optional().describe("Tab name to navigate (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session in a new minimized window");
+const elementType = z.string().describe("Human-readable element description used to obtain permission to interact with the element");
+const refType = z.string().describe("Exact target element reference from the page snapshot");
 
 server.registerTool(
   "browser_navigate",
   {
     title: "Navigate",
-    description: "Navigate the browser to the given URL. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the tab name will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
+    description: "Navigate the browser to the given URL. On timeouts, use the snapshot tool following this.",
     inputSchema: {
       url: z.string().describe("The URL to navigate to"),
-      tabName: z.string().optional().describe("Tab name to navigate (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session in a new minimized window"),
+      tabName: tabNameType,
     },
   },
   async ({ url, tabName }) => {
@@ -124,9 +108,9 @@ server.registerTool(
   "browser_go_back",
   {
     title: "Go Back",
-    description: "Go back to the previous page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the tab name will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
+    description: "Go back to the previous page.",
     inputSchema: {
-      tabName: z.string().optional().describe("Tab name to navigate back (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session"),
+      tabName: tabNameType,
     },
   },
   async ({ tabName }) => {
@@ -143,9 +127,9 @@ server.registerTool(
   "browser_go_forward",
   {
     title: "Go Forward",
-    description: "Go forward to the next page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab. Adding headless-* in starting of the tab name will create a headless session in a new minimized window with pinned tabs that can be controlled from the popup",
+    description: "Go forward to the next page.",
     inputSchema: {
-      tabName: z.string().optional().describe("Tab name to navigate forward (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session"),
+      tabName: tabNameType,
     },
   },
   async ({ tabName }) => {
@@ -162,9 +146,9 @@ server.registerTool(
   "browser_snapshot",
   {
     title: "Accessibility Snapshot",
-    description: "Capture an accessibility snapshot of the current page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
+    description: "Capture an accessibility snapshot of the current page.",
     inputSchema: {
-      tabName: z.string().optional().describe("Tab name to capture snapshot from (optional, uses default session if not provided)"),
+      tabName: tabNameType,
     },
   },
   async ({ tabName }) => {
@@ -181,11 +165,11 @@ server.registerTool(
   "browser_click",
   {
     title: "Click Element",
-    description: "Click an element on the page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
+    description: "Click an element on the page.",
     inputSchema: {
-      element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
-      ref: z.string().describe("Exact target element reference from the page snapshot"),
-      tabName: z.string().optional().describe("Tab name to click element in (optional, uses default session if not provided)"),
+      element: elementType,
+      ref: refType,
+      tabName: tabNameType,
     },
   },
   async ({ element, ref, tabName }) => {
@@ -202,11 +186,11 @@ server.registerTool(
   "browser_hover",
   {
     title: "Hover Element",
-    description: "Hover over an element on the page. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
+    description: "Hover over an element on the page.",
     inputSchema: {
-      element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
-      ref: z.string().describe("Exact target element reference from the page snapshot"),
-      tabName: z.string().optional().describe("Tab name to hover element in (optional, uses default session if not provided)"),
+      element: elementType,
+      ref: refType,
+      tabName: tabNameType,
     },
   },
   async ({ element, ref, tabName }) => {
@@ -223,13 +207,13 @@ server.registerTool(
   "browser_type",
   {
     title: "Type Text",
-    description: "Type text into an editable element. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
+    description: "Type text into an editable element.",
     inputSchema: {
-      element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
-      ref: z.string().describe("Exact target element reference from the page snapshot"),
+      element: elementType,
+      ref: refType,
       text: z.string().describe("The text to type into the element"),
       submit: z.boolean().optional().describe("Whether to submit entered text (press Enter after)"),
-      tabName: z.string().optional().describe("Tab name to type in (optional, uses default session if not provided)"),
+      tabName: tabNameType,
     },
   },
   async ({ element, ref, text, submit, tabName }) => {
@@ -246,12 +230,12 @@ server.registerTool(
   "browser_select_option",
   {
     title: "Select Option",
-    description: "Select an option in a dropdown. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
+    description: "Select an option in a dropdown.",
     inputSchema: {
-      element: z.string().describe("Human-readable element description used to obtain permission to interact with the element"),
-      ref: z.string().describe("Exact target element reference from the page snapshot"),
+      element: elementType,
+      ref: refType,
       values: z.array(z.string()).describe("Array of values to select in the dropdown. This can be a single value or multiple values."),
-      tabName: z.string().optional().describe("Tab name to select option in (optional, uses default session if not provided)"),
+      tabName: tabNameType,
     },
   },
   async ({ element, ref, values, tabName }) => {
@@ -268,10 +252,10 @@ server.registerTool(
   "browser_press_key",
   {
     title: "Press Key",
-    description: "Press a key on the keyboard. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
+    description: "Press a key on the keyboard.",
     inputSchema: {
       key: z.string().describe("Name of the key to press or a character to generate, such as `ArrowLeft` or `a`"),
-      tabName: z.string().optional().describe("Tab name to press key in (optional, uses default session if not provided)"),
+      tabName: tabNameType,
     },
   },
   async ({ key, tabName }) => {
@@ -321,9 +305,9 @@ server.registerTool(
   "browser_get_console_logs",
   {
     title: "Get Console Logs",
-    description: "Retrieve console logs from the browser. Optional to pass tab name, by default the tab from which the extension is init will be the default session tab.",
+    description: "Retrieve console logs from the browser.",
     inputSchema: {
-      tabName: z.string().optional().describe("Tab name to get console logs from (optional, uses default session if not provided)"),
+      tabName: tabNameType,
     },
   },
   async ({ tabName }) => {
