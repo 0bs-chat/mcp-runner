@@ -1,115 +1,88 @@
+// src/entrypoints/popup/App.tsx
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useWebSocket } from '@/hooks/ws'
-import { useTabs } from '@/hooks/tabs'
-import { Eye, X, RotateCcw } from 'lucide-react'
-import { assignTab } from '../background/tabs'
 
-function App() {
-  const [serverUrl, setServerUrl] = useState('ws://localhost:9223')
-  const [state, { connect, disconnect }] = useWebSocket()
-  const tabs = useTabs()
+type ConnectResponse = { success: boolean; error?: string }
+type Status = 'idle' | 'connecting' | 'connected' | 'error'
 
-  const handleConnect = async () => {
-    await connect(serverUrl)
+export default function App() {
+  const [serverUrl, setServerUrl] = useState<string>(
+    'ws://localhost:8080/extension/<your-uuid-here>'
+  )
+  const [status, setStatus] = useState<Status>('idle')
+  const [error, setError] = useState<string | null>(null)
+
+  const handleConnect = () => {
+    setStatus('connecting')
+    setError(null)
+    chrome.runtime.sendMessage(
+      { type: 'connectToMCPRelay', mcpRelayUrl: serverUrl },
+      (resp: ConnectResponse) => {
+        if (resp?.success) {
+          setStatus('connected')
+        } else {
+          setStatus('error')
+          setError(resp?.error ?? 'Unknown error')
+        }
+      }
+    )
   }
 
-  const handleDisconnect = async () => {
-    await disconnect()
+  const handleDisconnect = () => {
+    setStatus('idle')
+    setError(null)
+    chrome.runtime.sendMessage(
+      { type: 'disconnectFromMCPRelay' },
+      () => {}
+    )
   }
 
-  // View tab (switch to tab)
-  const handleViewTab = (tabId: number) => {
-    chrome.tabs.update(tabId, { active: true })
-  }
-
-  // Remove tab from map and close it
-  const handleRemoveTab = (tabId: number) => {
-    // Remove from storage
-    chrome.storage.local.get('tabs', (result) => {
-      const currentTabs = result.tabs || {}
-      // Remove all keys with this tabId value
-      const newTabs = Object.fromEntries(
-        Object.entries(currentTabs).filter(([k, v]) => v !== tabId)
-      )
-      chrome.storage.local.set({ tabs: newTabs })
-    })
-    // Close the tab
-    chrome.tabs.remove(tabId)
-  }
-
-  // Assign the current tab as default
-  const handleSwapDefault = async () => {
-    try {
-      await assignTab('default')
-    } catch (e) {
-      // Optionally handle error
-      console.error('Failed to assign default tab', e)
-    }
-  }
+  const isConnected = status === 'connected'
+  const isConnecting = status === 'connecting'
 
   return (
-    <div className="p-0 flex flex-col items-center gap-2 min-w-[400px]">
-      <Card className="w-full rounded-none">
+    <div className="p-4 flex flex-col gap-4 min-w-[320px]">
+      <Card>
         <CardHeader>
-          <CardTitle>0bs Browser MCP</CardTitle>
+          <CardTitle>0bs Browser MCP Bridge</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {state.error && (
-            <div className="text-sm text-red-600 bg-red-50 p-2 rounded mb-2">
-              {state.error}
+        <CardContent className="flex flex-col gap-3">
+          {status === 'error' && (
+            <div className="text-sm text-red-700 bg-red-100 p-2 rounded">
+              {error}
             </div>
           )}
 
-          <div className="flex flex-col gap-1">
+          <div className="flex gap-2 items-center">
             <Input
-              value={serverUrl}
-              onChange={(e) => setServerUrl(e.target.value)}
-              placeholder="WebSocket URL"
               className="flex-1"
+              placeholder="ws://host:port/extension/<uuid>"
+              value={serverUrl}
+              onChange={(e) => setServerUrl(e.currentTarget.value)}
             />
-            {!state.isConnected ? (
-              <Button onClick={handleConnect} size="sm">
-                Connect
+
+            {isConnected ? (
+              <Button size="sm" variant="destructive" onClick={handleDisconnect}>
+                Disconnect
               </Button>
             ) : (
-              <Button onClick={handleDisconnect} size="sm" variant="destructive">
-                Disconnect
+              <Button
+                size="sm"
+                disabled={isConnecting}
+                onClick={handleConnect}
+              >
+                {isConnecting ? 'Connecting…' : 'Connect'}
               </Button>
             )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-row items-center justify-between">
-              <span className="font-semibold">Tracked tabs</span>
-              <Button size="sm" variant="default" className='h-4' onClick={handleSwapDefault} title="Set current tab as default">
-                <RotateCcw className="h-4 w-4" />
-                Swap Default
-              </Button>
-            </div>
-            <div className="flex flex-col gap-1">
-              {Object.entries(tabs.tabs).length === 0 && <span className="text-muted-foreground">No tracked tabs</span>}
-              {Object.entries(tabs.tabs).map(([key, tabId]) => (
-                <div key={key} className="flex flex-row items-center justify-between bg-input rounded-lg px-2 py-1 w-full">
-                  <span className="font-mono text-xs">{key.charAt(0).toUpperCase() + key.slice(1)}</span>
-                  <div>
-                    <Button size="icon" variant="ghost" onClick={() => handleViewTab(tabId)} title="View tab">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleRemoveTab(tabId)} title="Remove tab">
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="text-xs text-gray-600">
+            Status: <strong>{status}</strong>
           </div>
         </CardContent>
       </Card>
     </div>
   )
 }
-
-export default App

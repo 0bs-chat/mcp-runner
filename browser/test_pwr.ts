@@ -1,37 +1,40 @@
-import { chromium, type BrowserContext } from "playwright";
+/**
+ * Copyright (c) Microsoft Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-async function main() {
-  console.log("Connecting to WebSocket server at ws://localhost:9223/cdp");
-  const browser = await chromium.connectOverCDP("ws://localhost:9223/cdp");
-  console.log("Connected to WebSocket server");
+import { resolveCLIConfig } from '../playwright-mcp/src/config.js';
+import { Connection } from '../playwright-mcp/src/connection.js';
+import { startStdioTransport } from '../playwright-mcp/src/transport.js';
+import { Server } from '../playwright-mcp/src/server.js';
 
-  try {
-    // Get existing context or create a new one
-    const contexts = browser.contexts();
-    let context: BrowserContext;
-    if (contexts.length > 0 && contexts[0]) {
-      context = contexts[0];
-    } else {
-      context = await browser.newContext();
-    }
+export async function runWithExtension(options: any) {
+  const config = await resolveCLIConfig({ });
 
-    // Create a new page
-    const page = await context.newPage();
+  let connection: Connection | null = null;
+  // Point CDP endpoint to the relay server.
+  config.browser.cdpEndpoint = "ws://localhost:8080/cdp/ca83c3fe-a2d6-4073-891a-ee5c905fe860";
 
-    // Navigate to the URL
-    await page.goto("https://example.com");
+  const server = new Server(config);
+  server.setupExitWatchdog();
 
-    console.log("Successfully navigated to https://example.com");
-
-    // Optional: Wait for a moment to see the page
-    await page.waitForTimeout(2000);
-
-  } catch (error) {
-    console.error("Error:", error);
-  } finally {
-    // Clean up
-    await browser.close();
-  }
+  connection = await startStdioTransport(server);
+  await connection.context.newTab();
+  const page = await connection.context.currentTabOrDie().page;
+  await page.goto('https://www.google.com');
+  await page.waitForTimeout(100000);
+  await connection.close();
 }
 
-main().catch(console.error);
+await runWithExtension({});
