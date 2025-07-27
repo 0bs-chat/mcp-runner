@@ -1,4 +1,4 @@
-import { getTabManager } from "./tab";
+import { getTabManager } from "../tab";
 
 export interface MCPMessage {
   id: string;
