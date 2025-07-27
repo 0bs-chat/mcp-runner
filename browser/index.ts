@@ -361,6 +361,28 @@ server.registerTool(
   },
 );
 
+server.registerTool(
+  "browser_debug_connection",
+  {
+    title: "Debug Connection",
+    description: "Debug the browser MCP connection status.",
+    inputSchema: {},
+  },
+  async () => {
+    const isConnected = browserClient !== null;
+    const connectionStatus = isConnected ? "Connected" : "Disconnected";
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Browser MCP Connection Status: ${connectionStatus}\nWebSocket Server Port: 8080\nBrowser Client: ${browserClient ? "Available" : "Not Available"}`,
+        },
+      ],
+    };
+  },
+);
+
 // server.registerTool(
 //   "browser_screenshot",
 //   {

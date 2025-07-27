@@ -7,6 +7,13 @@ class Relay {
 
   constructor() {
     this.setupListeners();
+    this.initializeConnection();
+  }
+
+  private initializeConnection() {
+    // Automatically connect to the WebSocket server on startup
+    console.log("Initializing WebSocket connection to localhost:8080");
+    this.connection.connect("ws://localhost:8080");
   }
 
   private setupListeners() {
