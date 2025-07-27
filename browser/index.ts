@@ -1,8 +1,10 @@
-import { createWebSocketServer } from "./ws";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import debug from "debug";
 import { z } from "zod";
-import { WebSocket } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
+
+const log = debug("browser-mcp");
 
 const server = new McpServer({
   name: "browser-mcp",
@@ -10,10 +12,10 @@ const server = new McpServer({
   description: "Browser Control MCP Server",
 });
 
-const wss = await createWebSocketServer(8080);
+const wss = new WebSocketServer({ port: 8080 });
 let browserClient: WebSocket | null = null;
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws: WebSocket) => {
   console.log("Browser client connected");
   browserClient = ws;
 
@@ -22,15 +24,29 @@ wss.on("connection", (ws) => {
     browserClient = null;
   });
 
-  ws.on("error", (error) => {
+  ws.on("error", (error: Error) => {
     console.error("WebSocket error:", error);
     browserClient = null;
   });
 });
 
+async function formatToolResponse(
+  tabName?: string,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const snapshot = await sendCommand("snapshot", tabName ? { tabName } : {});
+  return {
+    content: [
+      {
+        type: "text",
+        text: snapshot as string,
+      },
+    ],
+  };
+}
+
 async function sendCommand<T = unknown>(
   method: string,
-  params?: Record<string, unknown>
+  params?: Record<string, unknown>,
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     if (!browserClient || browserClient.readyState !== WebSocket.OPEN) {
@@ -68,27 +84,27 @@ async function sendCommand<T = unknown>(
   });
 }
 
-async function formatToolResponse(status: string, tabName?: string): Promise<{ content: Array<{ type: "text"; text: string }> }> {
-  const snapshot = await sendCommand("snapshot", tabName ? { tabName } : {});
-  return {
-    content: [
-      {
-        type: "text",
-        text: snapshot as string,
-      },
-    ],
-  };
-}
-
-const tabNameType = z.string().optional().describe("Tab name to navigate (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session in a new minimized window");
-const elementType = z.string().describe("Human-readable element description used to obtain permission to interact with the element");
-const refType = z.string().describe("Exact target element reference from the page snapshot");
+const tabNameType = z
+  .string()
+  .optional()
+  .describe(
+    "Tab name to navigate (optional, uses default session if not provided). Prefix with 'headless-' to create a headless session in a new minimized window",
+  );
+const elementType = z
+  .string()
+  .describe(
+    "Human-readable element description used to obtain permission to interact with the element",
+  );
+const refType = z
+  .string()
+  .describe("Exact target element reference from the page snapshot");
 
 server.registerTool(
   "browser_navigate",
   {
     title: "Navigate",
-    description: "Navigate the browser to the given URL. On timeouts, use the snapshot tool following this.",
+    description:
+      "Navigate the browser to the given URL. On timeouts, use the snapshot tool following this.",
     inputSchema: {
       url: z.string().describe("The URL to navigate to"),
       tabName: tabNameType,
@@ -97,11 +113,11 @@ server.registerTool(
   async ({ url, tabName }) => {
     try {
       await sendCommand("navigate", { url, tabName });
-      return formatToolResponse("Navigated to " + url, tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error navigating to " + url, tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -116,11 +132,11 @@ server.registerTool(
   async ({ tabName }) => {
     try {
       await sendCommand("goBack", { tabName });
-      return formatToolResponse("Navigated back", tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error navigating back", tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -135,11 +151,11 @@ server.registerTool(
   async ({ tabName }) => {
     try {
       await sendCommand("goForward", { tabName });
-      return formatToolResponse("Navigated forward", tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error navigating forward", tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -154,11 +170,11 @@ server.registerTool(
   async ({ tabName }) => {
     try {
       await sendCommand("snapshot", { tabName });
-      return formatToolResponse("Snapshot captured", tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error capturing snapshot", tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -175,11 +191,11 @@ server.registerTool(
   async ({ element, ref, tabName }) => {
     try {
       await sendCommand("click", { element, ref, tabName });
-      return formatToolResponse("Clicked element", tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error clicking element", tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -196,11 +212,11 @@ server.registerTool(
   async ({ element, ref, tabName }) => {
     try {
       await sendCommand("hover", { element, ref, tabName });
-      return formatToolResponse("Hovered over element", tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error hovering over element", tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -212,18 +228,21 @@ server.registerTool(
       element: elementType,
       ref: refType,
       text: z.string().describe("The text to type into the element"),
-      submit: z.boolean().optional().describe("Whether to submit entered text (press Enter after)"),
+      submit: z
+        .boolean()
+        .optional()
+        .describe("Whether to submit entered text (press Enter after)"),
       tabName: tabNameType,
     },
   },
   async ({ element, ref, text, submit, tabName }) => {
     try {
       await sendCommand("type", { element, ref, text, submit, tabName });
-      return formatToolResponse("Typed text into element", tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error typing text into element", tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -234,18 +253,22 @@ server.registerTool(
     inputSchema: {
       element: elementType,
       ref: refType,
-      values: z.array(z.string()).describe("Array of values to select in the dropdown. This can be a single value or multiple values."),
+      values: z
+        .array(z.string())
+        .describe(
+          "Array of values to select in the dropdown. This can be a single value or multiple values.",
+        ),
       tabName: tabNameType,
     },
   },
   async ({ element, ref, values, tabName }) => {
     try {
       await sendCommand("selectOption", { element, ref, values, tabName });
-      return formatToolResponse("Selected option", tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error selecting option", tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -254,18 +277,22 @@ server.registerTool(
     title: "Press Key",
     description: "Press a key on the keyboard.",
     inputSchema: {
-      key: z.string().describe("Name of the key to press or a character to generate, such as `ArrowLeft` or `a`"),
+      key: z
+        .string()
+        .describe(
+          "Name of the key to press or a character to generate, such as `ArrowLeft` or `a`",
+        ),
       tabName: tabNameType,
     },
   },
   async ({ key, tabName }) => {
     try {
       await sendCommand("pressKey", { key, tabName });
-      return formatToolResponse("Pressed key", tabName);
+      return formatToolResponse(tabName);
     } catch (error) {
-      return formatToolResponse("Error pressing key", tabName);
+      return formatToolResponse(tabName);
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -274,7 +301,7 @@ server.registerTool(
     title: "Wait",
     description: "Wait for a specified time in seconds",
     inputSchema: {
-      seconds: z.number().min(0).describe("Number of seconds to wait")
+      seconds: z.number().min(0).describe("Number of seconds to wait"),
     },
   },
   async ({ seconds }) => {
@@ -298,7 +325,7 @@ server.registerTool(
         ],
       };
     }
-  }
+  },
 );
 
 server.registerTool(
@@ -331,7 +358,7 @@ server.registerTool(
         ],
       };
     }
-  }
+  },
 );
 
 // server.registerTool(

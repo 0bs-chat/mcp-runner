@@ -42,9 +42,9 @@ Move the predefined entry points from the `entrypoints.inactive` folder to direc
 
 Popup is enabled by default.
 
-*: For `sidepanel`, wxt does not automatically add the `sidePanel` permission. You must manually add it to the `manifest` field in `wxt.config.js`. Related: [wxt#544](https://github.com/wxt-dev/wxt/issues/544)
+\*: For `sidepanel`, wxt does not automatically add the `sidePanel` permission. You must manually add it to the `manifest` field in `wxt.config.js`. Related: [wxt#544](https://github.com/wxt-dev/wxt/issues/544)
 
-*: For `onboarding`, to retrieve the URL of the onboarding page, use `browser.runtime.getURL('/onboarding.html')`.
+\*: For `onboarding`, to retrieve the URL of the onboarding page, use `browser.runtime.getURL('/onboarding.html')`.
 
 ## eslint
 
@@ -76,4 +76,4 @@ To use it, refer to the [documentation](https://ui.shadcn.com/docs/cli#add)
 
 3. Now you can run `bun submit:latest` for faster submission.
 
- > `bun submit:latest` is an alias for `bun exec 'rm -rf .output'; wxt zip && wxt submit --chrome-zip .output/*.zip`
+> `bun submit:latest` is an alias for `bun exec 'rm -rf .output'; wxt zip && wxt submit --chrome-zip .output/*.zip`

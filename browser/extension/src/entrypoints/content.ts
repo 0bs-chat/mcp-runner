@@ -1,6 +1,6 @@
 export default defineContentScript({
   main() {
-    console.log('Content script loaded');
+    console.log("Content script loaded");
   },
-  matches: ['<all_urls>'],
+  matches: ["<all_urls>"],
 });
