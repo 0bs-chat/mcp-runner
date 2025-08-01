@@ -13,7 +13,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'connection' | 'tabs'>('connection');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus['status']>('idle');
   const [tabs, setTabs] = useState<TabInfo[]>([]);
-  const [wsUrl, setWsUrl] = useState('ws://localhost:8080');
+  const [wsUrl, setWsUrl] = useState('ws://localhost:8080/extension');
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Load initial data
@@ -62,9 +62,13 @@ export default function App() {
 
   const handleConnect = async () => {
     setIsConnecting(true);
+    setConnectionStatus('connecting');
     try {
       await sendMessage('WsConnection', 'connect', { url: wsUrl });
-      setConnectionStatus('connected');
+      // Wait a moment for the connection to establish, then check status
+      setTimeout(() => {
+        loadConnectionStatus();
+      }, 1000);
     } catch (error) {
       console.error('Connection failed:', error);
       setConnectionStatus('error');

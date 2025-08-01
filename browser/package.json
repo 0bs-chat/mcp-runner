@@ -6,7 +6,8 @@
   "scripts": {
     "build": "cd extension && tsc",
     "build:watch": "cd extension && tsc --watch",
-    "test:cdp": "bun run playwright-cdp-test.ts"
+    "test:cdp": "bun run test.ts",
+    "relay": "bun run server.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -16,7 +17,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "ws": "^8.18.3",
-    "playwright": "^1.40.0"
+    "playwright": "^1.40.0",
+    "ws": "^8.18.3"
   }
 }
