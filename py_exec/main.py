@@ -29,6 +29,10 @@ async def get_executor(session_id: str) -> JupyterCodeExecutor:
 @mcp.tool()
 async def execute_code(code: str, session_id: str):
   """
+  Args:
+    code: The Python code to execute.
+    session_id: A unique readable task based string identifier. (ex: "ubisoft_rpg_global_sales_analysis")
+
   Executes a Python code block in a sandboxed Jupyter environment for the specified session.
 
   - Returns: Standard output/error as text, plus any generated images.

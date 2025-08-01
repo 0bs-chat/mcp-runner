@@ -14,5 +14,5 @@ RUN uv sync
 EXPOSE 8000
 
 CMD ["uv", "run", "main.py"]
-# docker build -t mantrakp04/py_exec:latest .
+# docker build -t mantrakp04/py_exec:latest . --push
 # docker run -p 8000:8000 mantrakp04/py_exec:latest
