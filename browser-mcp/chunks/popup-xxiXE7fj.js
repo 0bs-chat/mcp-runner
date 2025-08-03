@@ -21965,13 +21965,11 @@ function qz(t) {
     e.reverse(),
     vI.test(Fp(e).function || "") &&
       (e.pop(), vI.test(Fp(e).function || "") && e.pop()),
-    e
-      .slice(0, BN)
-      .map((n) => ({
-        ...n,
-        filename: n.filename || Fp(e).filename,
-        function: n.function || os,
-      }))
+    e.slice(0, BN).map((n) => ({
+      ...n,
+      filename: n.filename || Fp(e).filename,
+      function: n.function || os,
+    }))
   );
 }
 function Fp(t) {
@@ -53533,18 +53531,16 @@ var dle = /^\s*at (\S+?)(?::(\d+))(?::(\d+))\s*$/i,
         var b = Array.from(y);
         return (
           b.reverse(),
-          b
-            .slice(0, G2)
-            .map((S) =>
-              ee(
-                ee({}, S),
-                {},
-                {
-                  filename: S.filename || vle(b).filename,
-                  function: S.function || Ou,
-                },
-              ),
-            )
+          b.slice(0, G2).map((S) =>
+            ee(
+              ee({}, S),
+              {},
+              {
+                filename: S.filename || vle(b).filename,
+                function: S.function || Ou,
+              },
+            ),
+          )
         );
       })(l);
     };

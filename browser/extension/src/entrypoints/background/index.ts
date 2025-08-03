@@ -37,20 +37,26 @@ class Relay {
     });
   }
 
-  private async handleMessage(message: any, sendResponse: (response: any) => void) {
+  private async handleMessage(
+    message: any,
+    sendResponse: (response: any) => void,
+  ) {
     try {
       switch (message.target) {
-        case 'TabManager':
+        case "TabManager":
           await this.tabManager.handleMessage(message, sendResponse);
           break;
-        case 'WsConnection':
+        case "WsConnection":
           await this.connection.handleMessage(message, sendResponse);
           break;
         default:
-          sendResponse({ success: false, error: 'Unknown target' });
+          sendResponse({ success: false, error: "Unknown target" });
       }
     } catch (error) {
-      sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      sendResponse({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   }
 }

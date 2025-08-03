@@ -41,7 +41,10 @@ export class WsConnection {
           const errorResponse = {
             id: "unknown",
             method: "unknown",
-            error: error instanceof Error ? error.message : "Failed to process message"
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to process message",
           };
           this.ws.send(JSON.stringify(errorResponse));
         }
@@ -67,20 +70,23 @@ export class WsConnection {
 
   async handleMessage(message: any, sendResponse: (response: any) => void) {
     switch (message.method) {
-      case 'connect':
+      case "connect":
         this.connect(message.params.url);
         sendResponse({ success: true });
         break;
-      case 'disconnect':
+      case "disconnect":
         this.disconnect();
         sendResponse({ success: true });
         break;
-      case 'getStatus':
+      case "getStatus":
         const status = this.getStatus();
         sendResponse({ success: true, result: status });
         break;
       default:
-        sendResponse({ success: false, error: 'Unknown MCPWebSocketConnection method' });
+        sendResponse({
+          success: false,
+          error: "Unknown MCPWebSocketConnection method",
+        });
     }
   }
 }

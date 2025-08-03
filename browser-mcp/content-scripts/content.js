@@ -1356,11 +1356,9 @@ var content = (function () {
                       P > 1 && ql(st),
                       P > 1 &&
                         Ll(
-                          h
-                            .slice(0, P - 1)
-                            .concat({
-                              value: h[P - 2].type === " " ? "*" : "",
-                            }),
+                          h.slice(0, P - 1).concat({
+                            value: h[P - 2].type === " " ? "*" : "",
+                          }),
                         ).replace(Wt, "$1"),
                       A,
                       P < H && Bl(h.slice(P, H)),

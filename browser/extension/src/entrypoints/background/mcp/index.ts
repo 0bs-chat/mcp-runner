@@ -10,7 +10,11 @@ export interface MCPMessage {
 
 export class MCPCommandHandler {
   private tabManager = getTabManager();
-  private consoleLogs: Array<{level: string, message: string, timestamp: number}> = [];
+  private consoleLogs: Array<{
+    level: string;
+    message: string;
+    timestamp: number;
+  }> = [];
 
   constructor() {
     this.setupConsoleCapture();
@@ -22,7 +26,11 @@ export class MCPCommandHandler {
   }
 
   async handleCommand(message: MCPMessage): Promise<MCPMessage> {
-    console.log('MCPCommandHandler: Processing command', message.method, message.params);
+    console.log(
+      "MCPCommandHandler: Processing command",
+      message.method,
+      message.params,
+    );
 
     try {
       let result: unknown;
@@ -86,33 +94,40 @@ export class MCPCommandHandler {
 
   // Find element using various strategies
   private findElement(selector: string, tabId: number): Promise<any> {
-    return chrome.scripting.executeScript({
-      target: { tabId },
-      func: (sel: string) => {
-        // Try CSS selector
-        let element = document.querySelector(sel);
-        if (element) return element;
+    return chrome.scripting
+      .executeScript({
+        target: { tabId },
+        func: (sel: string) => {
+          // Try CSS selector
+          let element = document.querySelector(sel);
+          if (element) return element;
 
-        // Try by ID
-        element = document.getElementById(sel);
-        if (element) return element;
+          // Try by ID
+          element = document.getElementById(sel);
+          if (element) return element;
 
-        // Try by text content
-        const elements = Array.from(document.querySelectorAll('*'));
-        element = elements.find(el => el.textContent && el.textContent.trim() === sel) || null;
-        if (element) return element;
+          // Try by text content
+          const elements = Array.from(document.querySelectorAll("*"));
+          element =
+            elements.find(
+              (el) => el.textContent && el.textContent.trim() === sel,
+            ) || null;
+          if (element) return element;
 
-        // Try by aria-label
-        element = document.querySelector(`[aria-label="${sel}"]`);
-        if (element) return element;
+          // Try by aria-label
+          element = document.querySelector(`[aria-label="${sel}"]`);
+          if (element) return element;
 
-        return null;
-      },
-      args: [selector]
-    }).then(results => results[0]?.result);
+          return null;
+        },
+        args: [selector],
+      })
+      .then((results) => results[0]?.result);
   }
 
-  private async handleNavigate(params?: Record<string, unknown>): Promise<string> {
+  private async handleNavigate(
+    params?: Record<string, unknown>,
+  ): Promise<string> {
     const { url, tabName } = params || {};
     if (!url || typeof url !== "string") {
       throw new Error("URL is required for navigation");
@@ -127,7 +142,9 @@ export class MCPCommandHandler {
     return "Navigation completed";
   }
 
-  private async handleGoBack(params?: Record<string, unknown>): Promise<string> {
+  private async handleGoBack(
+    params?: Record<string, unknown>,
+  ): Promise<string> {
     const { tabName } = params || {};
     const tabId = await this.getTabId(tabName as string);
 
@@ -143,7 +160,9 @@ export class MCPCommandHandler {
     return "Navigated back";
   }
 
-  private async handleGoForward(params?: Record<string, unknown>): Promise<string> {
+  private async handleGoForward(
+    params?: Record<string, unknown>,
+  ): Promise<string> {
     const { tabName } = params || {};
     const tabId = await this.getTabId(tabName as string);
 
@@ -159,7 +178,9 @@ export class MCPCommandHandler {
     return "Navigated forward";
   }
 
-  private async handleSnapshot(params?: Record<string, unknown>): Promise<string> {
+  private async handleSnapshot(
+    params?: Record<string, unknown>,
+  ): Promise<string> {
     const { tabName } = params || {};
     const tabId = await this.getTabId(tabName as string);
 
@@ -170,7 +191,9 @@ export class MCPCommandHandler {
 
   private async waitForNavigation(tabId: number): Promise<void> {
     return new Promise((resolve) => {
-      const listener = (details: chrome.webNavigation.WebNavigationFramedCallbackDetails) => {
+      const listener = (
+        details: chrome.webNavigation.WebNavigationFramedCallbackDetails,
+      ) => {
         if (details.tabId === tabId && details.frameId === 0) {
           chrome.webNavigation.onCompleted.removeListener(listener);
           // Add a small delay to ensure page is fully loaded
@@ -198,10 +221,14 @@ export class MCPCommandHandler {
           const a = (window as any).__playwright_builtins__ || {
             Map: Map,
             Set: Set,
-            Date: Date
+            Date: Date,
           };
           const r = ((window as any).currentSnapshot?.generation ?? 0) + 1;
-          (window as any).currentSnapshot = buildAriaSnapshot(a, document.documentElement, r);
+          (window as any).currentSnapshot = buildAriaSnapshot(
+            a,
+            document.documentElement,
+            r,
+          );
           return formatAriaSnapshot((window as any).currentSnapshot, {});
 
           function buildAriaSnapshot(a: any, r: Element, s: number) {
@@ -255,49 +282,51 @@ export class MCPCommandHandler {
 
           function isHidden(element: Element): boolean {
             const style = window.getComputedStyle(element);
-            return style.display === 'none' || style.visibility === 'hidden';
+            return style.display === "none" || style.visibility === "hidden";
           }
 
           function getAriaElement(element: Element, snapshot: any): any {
-            const role = element.getAttribute('role') || getImplicitRole(element.tagName.toLowerCase());
+            const role =
+              element.getAttribute("role") ||
+              getImplicitRole(element.tagName.toLowerCase());
             if (!role) return null;
 
             return {
               role,
-              name: element.textContent?.trim() || '',
+              name: element.textContent?.trim() || "",
               children: [],
               element,
-              props: {}
+              props: {},
             };
           }
 
           function getImplicitRole(tagName: string): string | undefined {
             const roleMap: Record<string, string> = {
-              'button': 'button',
-              'a': 'link',
-              'input': 'textbox',
-              'textarea': 'textbox',
-              'select': 'combobox',
-              'option': 'option',
-              'img': 'img',
-              'h1': 'heading',
-              'h2': 'heading',
-              'h3': 'heading',
-              'h4': 'heading',
-              'h5': 'heading',
-              'h6': 'heading',
-              'main': 'main',
-              'nav': 'navigation',
-              'section': 'region',
-              'article': 'article',
-              'aside': 'complementary',
-              'header': 'banner',
-              'footer': 'contentinfo',
-              'form': 'form',
-              'table': 'table',
-              'tr': 'row',
-              'td': 'cell',
-              'th': 'columnheader'
+              button: "button",
+              a: "link",
+              input: "textbox",
+              textarea: "textbox",
+              select: "combobox",
+              option: "option",
+              img: "img",
+              h1: "heading",
+              h2: "heading",
+              h3: "heading",
+              h4: "heading",
+              h5: "heading",
+              h6: "heading",
+              main: "main",
+              nav: "navigation",
+              section: "region",
+              article: "article",
+              aside: "complementary",
+              header: "banner",
+              footer: "contentinfo",
+              form: "form",
+              table: "table",
+              tr: "row",
+              td: "cell",
+              th: "columnheader",
             };
             return roleMap[tagName];
           }
@@ -307,14 +336,16 @@ export class MCPCommandHandler {
               if (!element || !element.children) return;
 
               element.children = element.children.filter((child: any) => {
-                if (typeof child === 'string') return child.trim().length > 0;
+                if (typeof child === "string") return child.trim().length > 0;
                 if (child && child.children) normalize(child);
                 return true;
               });
 
-              if (element.children.length === 1 &&
-                  typeof element.children[0] === 'string' &&
-                  element.children[0] === element.name) {
+              if (
+                element.children.length === 1 &&
+                typeof element.children[0] === "string" &&
+                element.children[0] === element.name
+              ) {
                 element.children = [];
               }
             };
@@ -367,7 +398,8 @@ export class MCPCommandHandler {
                 }
               },
               g = a.root;
-            if (g.role === "fragment") for (const E of g.children || []) m(E, g, "");
+            if (g.role === "fragment")
+              for (const E of g.children || []) m(E, g, "");
             else m(g, null, "");
             return s.join(`
 `);
@@ -406,7 +438,9 @@ export class MCPCommandHandler {
         if (ariaMatch && (window as any).currentSnapshot) {
           const [, generation, elementId] = ariaMatch;
           if ((window as any).currentSnapshot.generation === +generation) {
-            targetElement = (window as any).currentSnapshot.elements.get(+elementId);
+            targetElement = (window as any).currentSnapshot.elements.get(
+              +elementId,
+            );
           }
         }
 
@@ -420,8 +454,11 @@ export class MCPCommandHandler {
           }
           if (!targetElement) {
             // Try by text content
-            const elements = Array.from(document.querySelectorAll('*'));
-            targetElement = elements.find(el => el.textContent && el.textContent.trim() === sel) || null;
+            const elements = Array.from(document.querySelectorAll("*"));
+            targetElement =
+              elements.find(
+                (el) => el.textContent && el.textContent.trim() === sel,
+              ) || null;
           }
           if (!targetElement) {
             // Try by aria-label
@@ -433,7 +470,7 @@ export class MCPCommandHandler {
           throw new Error(`Element not found: ${sel}`);
         }
 
-        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
 
         // Simple click
         (targetElement as HTMLElement).click();
@@ -464,7 +501,9 @@ export class MCPCommandHandler {
         if (ariaMatch && (window as any).currentSnapshot) {
           const [, generation, elementId] = ariaMatch;
           if ((window as any).currentSnapshot.generation === +generation) {
-            targetElement = (window as any).currentSnapshot.elements.get(+elementId);
+            targetElement = (window as any).currentSnapshot.elements.get(
+              +elementId,
+            );
           }
         }
 
@@ -478,8 +517,11 @@ export class MCPCommandHandler {
           }
           if (!targetElement) {
             // Try by text content
-            const elements = Array.from(document.querySelectorAll('*'));
-            targetElement = elements.find(el => el.textContent && el.textContent.trim() === sel) || null;
+            const elements = Array.from(document.querySelectorAll("*"));
+            targetElement =
+              elements.find(
+                (el) => el.textContent && el.textContent.trim() === sel,
+              ) || null;
           }
           if (!targetElement) {
             // Try by aria-label
@@ -491,7 +533,7 @@ export class MCPCommandHandler {
           throw new Error(`Element not found: ${sel}`);
         }
 
-        const event = new MouseEvent('mouseover', { bubbles: true });
+        const event = new MouseEvent("mouseover", { bubbles: true });
         targetElement.dispatchEvent(event);
       },
       args: [selector],
@@ -523,26 +565,37 @@ export class MCPCommandHandler {
         if (ariaMatch && (window as any).currentSnapshot) {
           const [, generation, elementId] = ariaMatch;
           if ((window as any).currentSnapshot.generation === +generation) {
-            targetElement = (window as any).currentSnapshot.elements.get(+elementId);
+            targetElement = (window as any).currentSnapshot.elements.get(
+              +elementId,
+            );
           }
         }
 
         // Fallback to other selectors
         if (!targetElement) {
           // Try CSS selector
-          targetElement = document.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement;
+          targetElement = document.querySelector(sel) as
+            | HTMLInputElement
+            | HTMLTextAreaElement;
           if (!targetElement) {
             // Try by ID
-            targetElement = document.getElementById(sel) as HTMLInputElement | HTMLTextAreaElement;
+            targetElement = document.getElementById(sel) as
+              | HTMLInputElement
+              | HTMLTextAreaElement;
           }
           if (!targetElement) {
             // Try by text content
-            const elements = Array.from(document.querySelectorAll('*'));
-            targetElement = (elements.find(el => el.textContent && el.textContent.trim() === sel) as HTMLInputElement | HTMLTextAreaElement) || null;
+            const elements = Array.from(document.querySelectorAll("*"));
+            targetElement =
+              (elements.find(
+                (el) => el.textContent && el.textContent.trim() === sel,
+              ) as HTMLInputElement | HTMLTextAreaElement) || null;
           }
           if (!targetElement) {
             // Try by aria-label
-            targetElement = document.querySelector(`[aria-label="${sel}"]`) as HTMLInputElement | HTMLTextAreaElement;
+            targetElement = document.querySelector(`[aria-label="${sel}"]`) as
+              | HTMLInputElement
+              | HTMLTextAreaElement;
           }
         }
 
@@ -554,65 +607,82 @@ export class MCPCommandHandler {
         targetElement.focus();
 
         // Check if it's a form input element
-        const isFormInput = targetElement.tagName === 'INPUT' || targetElement.tagName === 'TEXTAREA';
+        const isFormInput =
+          targetElement.tagName === "INPUT" ||
+          targetElement.tagName === "TEXTAREA";
 
         if (isFormInput) {
           // For form inputs, set value directly (like browser-mcp does)
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-          const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value",
+          )?.set;
+          const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLTextAreaElement.prototype,
+            "value",
+          )?.set;
 
-          if (targetElement.tagName === 'INPUT' && nativeInputValueSetter) {
+          if (targetElement.tagName === "INPUT" && nativeInputValueSetter) {
             nativeInputValueSetter.call(targetElement, inputText);
-          } else if (targetElement.tagName === 'TEXTAREA' && nativeTextAreaValueSetter) {
+          } else if (
+            targetElement.tagName === "TEXTAREA" &&
+            nativeTextAreaValueSetter
+          ) {
             nativeTextAreaValueSetter.call(targetElement, inputText);
           } else {
             targetElement.value = inputText;
           }
 
           // Trigger React-compatible events
-          targetElement.dispatchEvent(new Event('input', { bubbles: true }));
-          targetElement.dispatchEvent(new Event('change', { bubbles: true }));
+          targetElement.dispatchEvent(new Event("input", { bubbles: true }));
+          targetElement.dispatchEvent(new Event("change", { bubbles: true }));
         } else {
           // For non-form elements, use character-by-character typing
-          targetElement.textContent = '';
+          targetElement.textContent = "";
           for (let i = 0; i < inputText.length; i++) {
             const char = inputText[i];
 
             // Simulate keydown
-            const keydownEvent = new KeyboardEvent('keydown', { key: char, bubbles: true });
+            const keydownEvent = new KeyboardEvent("keydown", {
+              key: char,
+              bubbles: true,
+            });
             targetElement.dispatchEvent(keydownEvent);
 
             // Add character
             targetElement.textContent += char;
 
             // Simulate keyup
-            const keyupEvent = new KeyboardEvent('keyup', { key: char, bubbles: true });
+            const keyupEvent = new KeyboardEvent("keyup", {
+              key: char,
+              bubbles: true,
+            });
             targetElement.dispatchEvent(keyupEvent);
           }
         }
 
         if (shouldSubmit) {
           // Simulate Enter key press
-          const enterKeyDown = new KeyboardEvent('keydown', {
-            key: 'Enter',
-            code: 'Enter',
+          const enterKeyDown = new KeyboardEvent("keydown", {
+            key: "Enter",
+            code: "Enter",
             keyCode: 13,
             bubbles: true,
-            cancelable: true
+            cancelable: true,
           });
           targetElement.dispatchEvent(enterKeyDown);
 
-          const enterKeyUp = new KeyboardEvent('keyup', {
-            key: 'Enter',
-            code: 'Enter',
+          const enterKeyUp = new KeyboardEvent("keyup", {
+            key: "Enter",
+            code: "Enter",
             keyCode: 13,
             bubbles: true,
-            cancelable: true
+            cancelable: true,
           });
           targetElement.dispatchEvent(enterKeyUp);
 
           // Try to submit the form
-          const form = targetElement.closest('form');
+          const form = targetElement.closest("form");
           if (form) {
             form.submit();
           }
@@ -621,10 +691,14 @@ export class MCPCommandHandler {
       args: [selector, text, !!submit],
     });
 
-    return submit ? "Text typed and submitted successfully" : "Text typed successfully";
+    return submit
+      ? "Text typed and submitted successfully"
+      : "Text typed successfully";
   }
 
-  private async handleSelectOption(params?: Record<string, unknown>): Promise<string> {
+  private async handleSelectOption(
+    params?: Record<string, unknown>,
+  ): Promise<string> {
     const { ref, values, tabName } = params || {};
     if (!ref || typeof ref !== "string") {
       throw new Error("Element reference is required for selectOption");
@@ -640,29 +714,39 @@ export class MCPCommandHandler {
       func: (ariaRef: string, optionValues: string[]) => {
         const match = ariaRef.match(/^s(\d+)e(\d+)$/);
         if (!match) {
-          throw new Error("Invalid aria-ref selector, should be of form s<number>e<number>");
+          throw new Error(
+            "Invalid aria-ref selector, should be of form s<number>e<number>",
+          );
         }
 
         if (!(window as any).currentSnapshot) {
-          throw new Error("No snapshot found. Please generate an aria snapshot before trying again.");
+          throw new Error(
+            "No snapshot found. Please generate an aria snapshot before trying again.",
+          );
         }
 
         const [, generation, elementId] = match;
         if ((window as any).currentSnapshot.generation !== +generation) {
-          throw new Error(`Stale aria-ref, expected s${(window as any).currentSnapshot.generation}e${elementId}, got ${ariaRef}. Please regenerate an aria snapshot before trying again.`);
+          throw new Error(
+            `Stale aria-ref, expected s${(window as any).currentSnapshot.generation}e${elementId}, got ${ariaRef}. Please regenerate an aria snapshot before trying again.`,
+          );
         }
 
-        const element = (window as any).currentSnapshot.elements.get(+elementId) as HTMLSelectElement;
+        const element = (window as any).currentSnapshot.elements.get(
+          +elementId,
+        ) as HTMLSelectElement;
         if (!element) {
           throw new Error(`Element with id ${elementId} not found in snapshot`);
         }
 
-        if (element.tagName.toLowerCase() !== 'select') {
-          throw new Error(`Element with ref ${ariaRef} is not a select element`);
+        if (element.tagName.toLowerCase() !== "select") {
+          throw new Error(
+            `Element with ref ${ariaRef} is not a select element`,
+          );
         }
 
         // Scroll into view and focus
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
         element.focus();
 
         // Clear existing selections
@@ -681,15 +765,17 @@ export class MCPCommandHandler {
         }
 
         // Trigger change event
-        element.dispatchEvent(new Event('change', { bubbles: true }));
+        element.dispatchEvent(new Event("change", { bubbles: true }));
       },
       args: [ref, values],
     });
 
-    return `Options selected successfully: ${values.join(', ')}`;
+    return `Options selected successfully: ${values.join(", ")}`;
   }
 
-  private async handlePressKey(params?: Record<string, unknown>): Promise<string> {
+  private async handlePressKey(
+    params?: Record<string, unknown>,
+  ): Promise<string> {
     const { key, tabName } = params || {};
     if (!key || typeof key !== "string") {
       throw new Error("Key is required for pressKey");
@@ -704,21 +790,21 @@ export class MCPCommandHandler {
         const target = document.activeElement || document.body;
 
         // Create keyboard event
-        const keyEvent = new KeyboardEvent('keydown', {
+        const keyEvent = new KeyboardEvent("keydown", {
           key: keyName,
           code: keyName,
           bubbles: true,
-          cancelable: true
+          cancelable: true,
         });
 
         target.dispatchEvent(keyEvent);
 
         // Also dispatch keyup event
-        const keyUpEvent = new KeyboardEvent('keyup', {
+        const keyUpEvent = new KeyboardEvent("keyup", {
           key: keyName,
           code: keyName,
           bubbles: true,
-          cancelable: true
+          cancelable: true,
         });
 
         target.dispatchEvent(keyUpEvent);
@@ -735,11 +821,13 @@ export class MCPCommandHandler {
       throw new Error("Valid seconds number is required for wait");
     }
 
-    await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
     return `Waited for ${seconds} seconds`;
   }
 
-  private async handleGetConsoleLogs(params?: Record<string, unknown>): Promise<string> {
+  private async handleGetConsoleLogs(
+    params?: Record<string, unknown>,
+  ): Promise<string> {
     const { tabName } = params || {};
     const tabId = await this.getTabId(tabName as string);
 
@@ -753,7 +841,7 @@ export class MCPCommandHandler {
         },
       });
 
-      return results[0]?.result as string || "No console logs available";
+      return (results[0]?.result as string) || "No console logs available";
     } catch (error) {
       return `Error getting console logs: ${error instanceof Error ? error.message : "Unknown error"}`;
     }

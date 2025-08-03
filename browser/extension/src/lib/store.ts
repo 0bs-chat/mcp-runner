@@ -29,7 +29,7 @@ class Store {
   }
 
   private notifyListeners(changes: Partial<StoreState>): void {
-    this.listeners.forEach(listener => listener(changes));
+    this.listeners.forEach((listener) => listener(changes));
   }
 }
 

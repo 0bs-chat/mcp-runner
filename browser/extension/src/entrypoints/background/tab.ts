@@ -10,7 +10,10 @@ export class TabManager {
 
     let newTabId: number | undefined;
     if (tabName === "default") {
-      const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeTabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       if (activeTabs.length > 0 && activeTabs[0].id) {
         newTabId = activeTabs[0].id;
       }
@@ -42,26 +45,29 @@ export class TabManager {
     return Array.from(this.tabs.entries());
   }
 
-  public async handleMessage(message: any, sendResponse: (response: any) => void) {
+  public async handleMessage(
+    message: any,
+    sendResponse: (response: any) => void,
+  ) {
     switch (message.method) {
-      case 'getOrCreateTab':
+      case "getOrCreateTab":
         const tabId = await this.getOrCreateTab(message.params.tabName);
         sendResponse({ success: true, result: tabId });
         break;
-      case 'removeTab':
+      case "removeTab":
         await this.removeTab(message.params.tabName);
         sendResponse({ success: true });
         break;
-      case 'openTab':
+      case "openTab":
         await this.openTab(message.params.tabName);
         sendResponse({ success: true });
         break;
-      case 'listTabs':
+      case "listTabs":
         const tabs = await this.listTabs();
         sendResponse({ success: true, result: tabs });
         break;
       default:
-        sendResponse({ success: false, error: 'Unknown TabManager method' });
+        sendResponse({ success: false, error: "Unknown TabManager method" });
     }
   }
 }

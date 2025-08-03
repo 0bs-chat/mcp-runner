@@ -1,13 +1,18 @@
-import { TabManager } from '../tab';
+import { TabManager } from "../tab";
 
-export async function getTabId(tabManager: TabManager, tabName?: string): Promise<number> {
+export async function getTabId(
+  tabManager: TabManager,
+  tabName?: string,
+): Promise<number> {
   const resolvedTabName = tabName || "default";
   return await tabManager.getOrCreateTab(resolvedTabName);
 }
 
 export async function waitForNavigation(tabId: number): Promise<void> {
   return new Promise((resolve) => {
-    const listener = (details: chrome.webNavigation.WebNavigationFramedCallbackDetails) => {
+    const listener = (
+      details: chrome.webNavigation.WebNavigationFramedCallbackDetails,
+    ) => {
       if (details.tabId === tabId && details.frameId === 0) {
         chrome.webNavigation.onCompleted.removeListener(listener);
         // Add a small delay to ensure page is fully loaded
@@ -27,7 +32,7 @@ export async function waitForNavigation(tabId: number): Promise<void> {
 
 // Simple wait utility
 export function wait(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Check if element is visible
@@ -35,11 +40,13 @@ export function isVisible(element: Element): boolean {
   const style = window.getComputedStyle(element);
   const rect = element.getBoundingClientRect();
 
-  return style.display !== 'none' &&
-         style.visibility !== 'hidden' &&
-         style.opacity !== '0' &&
-         rect.width > 0 &&
-         rect.height > 0;
+  return (
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    style.opacity !== "0" &&
+    rect.width > 0 &&
+    rect.height > 0
+  );
 }
 
 export async function getAccessibilitySnapshot(tabId: number): Promise<string> {
@@ -68,21 +75,33 @@ export function generateSimpleSnapshot(): string {
     title: document.title,
     timestamp: Date.now(),
     elements: new Map(),
-    generation: ((window as any).currentSnapshot?.generation || 0) + 1
+    generation: ((window as any).currentSnapshot?.generation || 0) + 1,
   };
 
   // Get interactive elements
   const selectors = [
-    'a[href]', 'button', 'input', 'textarea', 'select',
-    '[role="button"]', '[role="link"]', '[tabindex]',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    '[aria-label]', '[onclick]'
+    "a[href]",
+    "button",
+    "input",
+    "textarea",
+    "select",
+    '[role="button"]',
+    '[role="link"]',
+    "[tabindex]",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "[aria-label]",
+    "[onclick]",
   ];
 
   const elements: string[] = [];
   let elementId = 0;
 
-  selectors.forEach(selector => {
+  selectors.forEach((selector) => {
     const nodeList = document.querySelectorAll(selector);
     nodeList.forEach((element) => {
       if (isElementVisible(element)) {
@@ -97,25 +116,31 @@ export function generateSimpleSnapshot(): string {
   // Store snapshot globally for later reference
   (window as any).currentSnapshot = snapshot;
 
-  return elements.join('\n');
+  return elements.join("\n");
 }
 
 function isElementVisible(element: Element): boolean {
   const style = window.getComputedStyle(element);
   const rect = element.getBoundingClientRect();
 
-  return style.display !== 'none' &&
-         style.visibility !== 'hidden' &&
-         style.opacity !== '0' &&
-         rect.width > 0 &&
-         rect.height > 0;
+  return (
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    style.opacity !== "0" &&
+    rect.width > 0 &&
+    rect.height > 0
+  );
 }
 
-function getElementInfo(element: Element, id: number, generation: number): string {
+function getElementInfo(
+  element: Element,
+  id: number,
+  generation: number,
+): string {
   const tagName = element.tagName.toLowerCase();
-  const text = element.textContent?.trim().substring(0, 100) || '';
-  const ariaLabel = element.getAttribute('aria-label') || '';
-  const role = element.getAttribute('role') || getImplicitRole(tagName);
+  const text = element.textContent?.trim().substring(0, 100) || "";
+  const ariaLabel = element.getAttribute("aria-label") || "";
+  const role = element.getAttribute("role") || getImplicitRole(tagName);
 
   let info = `- ${role || tagName}`;
 
@@ -132,20 +157,17 @@ function getElementInfo(element: Element, id: number, generation: number): strin
 
 function getImplicitRole(tagName: string): string {
   const roleMap: Record<string, string> = {
-    'button': 'button',
-    'a': 'link',
-    'input': 'textbox',
-    'textarea': 'textbox',
-    'select': 'combobox',
-    'h1': 'heading',
-    'h2': 'heading',
-    'h3': 'heading',
-    'h4': 'heading',
-    'h5': 'heading',
-    'h6': 'heading'
+    button: "button",
+    a: "link",
+    input: "textbox",
+    textarea: "textbox",
+    select: "combobox",
+    h1: "heading",
+    h2: "heading",
+    h3: "heading",
+    h4: "heading",
+    h5: "heading",
+    h6: "heading",
   };
   return roleMap[tagName] || tagName;
 }
-
-
-
