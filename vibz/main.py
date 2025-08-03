@@ -6,7 +6,7 @@ import git
 import queue
 import threading
 from pathlib import Path
-from typing import List, Set, Dict
+from typing import List, Dict, Set
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
 
@@ -17,123 +17,134 @@ BASE_DIR = "./data"
 DATA_DIR = "./data"
 TEMPLATE_DIR = "templates/convex-tanstackrouter-shadcn"
 
-template_description = open(f"{TEMPLATE_DIR}/desc.md", "r").read()
-
+template_description = Path(f"{TEMPLATE_DIR}/desc.md").read_text()
 diff = ""
 
 # Lint server state
-lint_process = None
-lint_output_queue = queue.Queue()
 lint_errors: Set[str] = set()
-lint_thread = None
-lint_running = False
 
 # Bun dev server state
 dev_process = None
 dev_output_queue = queue.Queue()
-dev_thread = None
 dev_running = False
 
-def stream_dev_logs():
-    """Stream bun dev server logs in a separate thread"""
-    global dev_process, dev_output_queue, dev_running
-    
-    if dev_process is None:
+# VS Code server state
+code_server_process = None
+code_server_output_queue = queue.Queue()
+code_server_running = False
+
+def stream_logs():
+    """Stream bun dev output (stdout+stderr) in one thread."""
+    global dev_running
+    global code_server_running
+
+    if (
+        dev_process is None
+        or dev_process.stdout is None
+        or code_server_process is None
+        or code_server_process.stdout is None
+    ):
+        print("Warning: One or both processes not properly initialized for streaming")
         return
-    
+
     dev_running = True
-    
-    def stream_output(pipe, prefix):
+    code_server_running = True
+
+    def _dev_reader():
+        global dev_running
         try:
-            for line in iter(pipe.readline, ''):
+            for raw_line in iter(dev_process.stdout.readline, ''):
+                line = raw_line.strip()
                 if line:
-                    log_line = line.strip()
-                    if log_line:
-                        print(f"[BUN DEV {prefix}] {log_line}")
-                        dev_output_queue.put(f"[{prefix}] {log_line}")
+                    msg = f"[DEV] {line}"
+                    print(msg)
+                    dev_output_queue.put(msg)
         except Exception as e:
-            print(f"Error streaming {prefix}: {e}")
+            print(f"Error reading dev process output: {e}")
+        finally:
+            dev_running = False
     
-    # Start streaming stdout and stderr in separate threads
-    stdout_thread = threading.Thread(target=stream_output, args=(dev_process.stdout, "STDOUT"))
-    stderr_thread = threading.Thread(target=stream_output, args=(dev_process.stderr, "STDERR"))
-    
-    stdout_thread.daemon = True
-    stderr_thread.daemon = True
-    
-    stdout_thread.start()
-    stderr_thread.start()
-    
-    # Wait for the process to complete
-    dev_process.wait()
-    dev_running = False
+    def _code_server_reader():
+        global code_server_running
+        try:
+            for raw_line in iter(code_server_process.stdout.readline, ''):
+                line = raw_line.strip()
+                if line:
+                    msg = f"[CODE SERVER] {line}"
+                    print(msg)
+                    code_server_output_queue.put(msg)
+        except Exception as e:
+            print(f"Error reading code server process output: {e}")
+        finally:
+            code_server_running = False
+
+    threading.Thread(target=_dev_reader, daemon=True).start()
+    threading.Thread(target=_code_server_reader, daemon=True).start()
 
 def setup_template():
-    """Ensure /mnt/data exists, copy template, initialize git, and run bun dev."""
-    global dev_process, dev_thread
-    
-    # Ensure the /mnt/data directory exists
+    """Copy template into DATA_DIR, init git, bun install & dev."""
+    global dev_process
+    global code_server_process
+
     Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
 
-    # Copy the template to /mnt/data directory
     if os.path.exists(BASE_DIR):
         shutil.move(BASE_DIR, f"{BASE_DIR}.bak.{time.time()}")
+
     shutil.copytree(TEMPLATE_DIR, BASE_DIR)
-    git.Repo.init(BASE_DIR)
-    git.Repo(BASE_DIR).git.add('.')
-    git.Repo(BASE_DIR).git.commit('-m', 'Initial commit')
+    repo = git.Repo.init(BASE_DIR)
+    repo.git.add(".")
+    repo.index.commit("Initial commit")
     print(f"Template copied to {BASE_DIR}")
 
-    # Run bun dev in the /mnt/data directory
     try:
         subprocess.run(["bun", "install"], cwd=BASE_DIR, check=True)
-        # Start bun dev in the background with streaming
+
         dev_process = subprocess.Popen(
-            ["bun", "dev"], 
-            cwd=BASE_DIR, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE,
+            ["bun", "dev"],
+            cwd=BASE_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             bufsize=1,
-            universal_newlines=True
+            universal_newlines=True,
+            text=True,
         )
         print(f"Started bun dev in background (PID: {dev_process.pid})")
-        
-        # Start streaming logs in a separate thread
-        dev_thread = threading.Thread(target=stream_dev_logs)
-        dev_thread.daemon = True
-        dev_thread.start()
-        
+
+        code_server_process = subprocess.Popen(
+            ["bun", "run", "code-server", "--auth", "none", "--port", "8080", BASE_DIR],
+            cwd=BASE_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            universal_newlines=True,
+            text=True,
+        )
+        print(f"Started VS Code server in background (PID: {code_server_process.pid})")
+
+        # Start streaming logs
+        stream_logs()
     except subprocess.CalledProcessError as e:
         print(f"Error running bun install: {e}")
     except FileNotFoundError:
         print("bun not found. Please install bun first.")
 
-def git_commit_response(project_name: str):
-    """Commit the response to git"""
+def git_commit_response(project_name: str) -> bool:
     try:
         repo = git.Repo(DATA_DIR)
-        
-        # Create a commit message
-        commit_message = f"feat: {project_name} - Generated code response"
-        
-        # Add all files
-        repo.git.add('.')
-        
-        # Commit with the message
-        repo.index.commit(commit_message)
-        
+        repo.git.add(".")
+        repo.index.commit(f"feat: {project_name} - Generated code response")
         return True
     except Exception as e:
         print(f"Error committing to git: {e}")
         return False
 
 def run_lint() -> str:
-    """Run TypeScript linting using bunx tsc --noEmit and return output string"""
     result = subprocess.run(
         ["bunx", "tsc", "--noEmit"],
         cwd=BASE_DIR,
         capture_output=True,
-        text=True
+        text=True,
     )
     return result.stdout + result.stderr
 
@@ -141,76 +152,40 @@ class CodeFile(BaseModel):
     name: str
     content: str
 
-@mcp.tool(description=template_description + f'\n\nDiff: {diff}' + """
+@mcp.tool(description=template_description + f"\n\nDiff: {diff}" + """
 Create a complete code project with multiple files.
 
 Args:
-    project_name: str : A descriptive name for the project (e.g., 'Stopwatch', 'Email Form', 'Dashboard'). Used as the project identifier.
-    planning: str : A brief planning statement that outlines the project structure, styling approach, and key considerations before implementation.
-    code: {'name': str, 'content': str}[] : List of code files that make up the complete project. Each file should be a complete, functional component or module.
-        Each item should have 'name' (filename with extension, must use kebab-case) and 'content' (complete file content as string, production-ready without placeholders or mocks, no explanatory comments).
+    project_name: str : A descriptive name for the project.
+    planning: str : A brief planning statement.
+    code: {'name': str, 'content': str}[] : List of code files.
 """)
 def code_project(project_name: str, planning: str, code: List[Dict[str, str]]):
     try:
         for file in code:
-            file_path = os.path.join(BASE_DIR, file['name'])
-            
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            
-            # Write file content
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(file['content'])
-        
-        # Add to git
+            path = os.path.join(BASE_DIR, file["name"])
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(file["content"])
         git_commit_response(project_name)
-
-        # Run and return lint output
         return run_lint()
     except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Error creating project: {str(e)}"
-        }
+        return {"status": "error", "message": str(e)}
 
 @mcp.tool()
 def install_packages(packages: List[str]):
-    """
-    Installs the specified packages using bun.
-    
-    Args:
-        packages: List of package names to install (e.g., ['@radix-ui/react-dialog', 'lucide-react'])
-    """
     try:
-        # Ensure we're in the data directory
         if not os.path.exists(DATA_DIR):
             setup_template()
-        
-        # Install packages using npm
-        cmd = ["bun", "install"] + packages
-        result = subprocess.run(cmd, cwd=BASE_DIR, capture_output=True, text=True)
-        
+        result = subprocess.run(
+            ["bun", "install"] + packages, cwd=BASE_DIR, capture_output=True, text=True
+        )
         if result.returncode == 0:
-            return {
-                "status": "success",
-                "message": f"Successfully installed packages: {', '.join(packages)}",
-                "output": result.stdout
-            }
-        else:
-            return {
-                "status": "error",
-                "message": f"Failed to install packages: {result.stderr}",
-                "packages": packages
-            }
-              
+            return {"status": "success", "message": f"Installed: {', '.join(packages)}"}
+        return {"status": "error", "message": result.stderr, "packages": packages}
     except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Error installing packages: {str(e)}",
-            "packages": packages
-        }
+        return {"status": "error", "message": str(e), "packages": packages}
 
-# Startup operations
 if __name__ == "__main__":
     print("Starting vibz MCP server...")
     setup_template()

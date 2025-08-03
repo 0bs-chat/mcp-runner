@@ -1,1 +1,6 @@
 data*
+node_modules
+.venv
+__pycache__
+uv.lock
+bun.lock
