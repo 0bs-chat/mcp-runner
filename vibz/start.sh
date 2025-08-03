@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Configuration
-export BASE_DIR="./data"
-export DATA_DIR="./mnt/data"
-export TEMPLATE_DIR="templates/convex-tanstackrouter-shadcn"
+export BASE_DIR="${BASE_DIR:-./data}"
+export DATA_DIR="${DATA_DIR:-./mnt/data}"
+export TEMPLATE_DIR="${TEMPLATE_DIR:-templates/convex-tanstackrouter-shadcn}"
 
 # Install required packages
 apt-get update && apt-get install -y expect
@@ -11,26 +11,29 @@ apt-get update && apt-get install -y expect
 # Setup template and project structure
 echo "Setting up project environment..."
 
-# Backup existing data directory if present
-if [ -d "$BASE_DIR" ]; then
-    backup_name="$BASE_DIR.bak.$(date +%s)"
-    mv "$BASE_DIR" "$backup_name"
-    echo "Backed up existing data directory to $backup_name"
+# Backup existing data directory if --new is present
+if [[ " $@ " =~ " --new " ]]; then
+    if [ -d "$BASE_DIR" ]; then
+        backup_name="$BASE_DIR.bak.$(date +%s)"
+        mv "$BASE_DIR" "$backup_name"
+        echo "Backed up existing data directory to $backup_name"
+        cp -r "$TEMPLATE_DIR" "$BASE_DIR"
+    fi
 fi
 
-# Copy template to data directory
-cp -r "$TEMPLATE_DIR" "$BASE_DIR"
 cd "$BASE_DIR"
 
 # Initialize git repository
-git init
-git add .
-git commit -m "Initial commit"
-echo "Template copied and git repository initialized"
+if [[ " $@ " =~ " --new " ]]; then
+  git init
+  git add .
+  git commit -m "Initial commit"
+  echo "Template copied and git repository initialized"
 
-# Install dependencies
-echo "Installing dependencies..."
-bun install
+  # Install dependencies
+  echo "Installing dependencies..."
+  bun install
+fi
 
 # Start background services
 echo "Starting background services..."
@@ -47,25 +50,24 @@ expect -c '
 ' &
 CONVEX_PID=$!
 
-# Wait for Convex dev server to be ready
-echo "Waiting for Convex dev server to be ready..."
-sleep 5
 
 # Start Convex auth (after dev server is ready)
-echo "Setting up Convex auth..."
-expect -c '
-  spawn bunx @convex-dev/auth --skip-git-check --web-server-url http://localhost:3000
-  expect "Overwrite them?"
-  send "\r"
-  expect "Ready to continue?"
-  send "\r"
-  interact
-' &
-AUTH_PID=$!
+if [[ " $@ " =~ " --new " ]]; then
+  # Wait for Convex dev server to be ready
+  echo "Waiting for Convex dev server to be ready..."
+  sleep 5
 
-# Wait for auth setup to complete
-echo "Waiting for auth setup to complete..."
-sleep 5
+  echo "Setting up Convex auth..."
+  expect -c '
+    spawn bunx @convex-dev/auth --skip-git-check --web-server-url http://localhost:3000
+    expect "Overwrite them?"
+    send "\r"
+    expect "Ready to continue?"
+    send "\r"
+    interact
+  ' &
+  AUTH_PID=$!
+fi
 
 # Start bun dev server
 echo "Starting bun dev server..."

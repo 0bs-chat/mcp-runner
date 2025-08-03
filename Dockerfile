@@ -29,6 +29,7 @@ RUN apt update         && \
         g++                   \
         xz-utils              \
         build-essential       \
+        expect                \
         bash-completion       && \
     apt-get clean
 
@@ -61,4 +62,5 @@ ENV IDLE_TIMEOUT_MINS=15
 EXPOSE 8000
 CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bunx -y supergateway --stdio '${MCP_COMMAND}' --port 8000 --base-url http://0.0.0.0:8000 --ssePath /sse --messagePath /message"]
 
-# sudo docker build -t mantrakp04/mcprunner:latest -f services/mcps/Dockerfile . && sudo docker push mantrakp04/mcprunner:latest
+# sudo docker build -t mantrakp04/mcprunner:latest -f services/mcps/Dockerfile . --push
+# sudo docker run -it mantrakp04/mcprunner:latest -e MCP_COMMAND="git clone https://github.com/0bs-chat/mcp-runner.git && cd mcp-runner/vibz && bash start.sh" -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 
