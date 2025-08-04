@@ -15,20 +15,9 @@ mv "$BASE_DIR" "$backup_name"
 echo "Backed up existing data directory to $backup_name"
 cp -r "$TEMPLATE_DIR" "$BASE_DIR"
 
-cd "$BASE_DIR"
-
-# Initialize git repository
-git init
-git add .
-git commit -m "Initial commit"
-echo "Template copied and git repository initialized"
-
-# Install dependencies
-echo "Installing dependencies..."
-bun install
-
 # Start background services
 echo "Starting background services..."
+cd "$BASE_DIR"
 /convex-local-backend --instance-name convex-self-hosted --instance-secret $SECRET -i 0.0.0.0 &
 BACKEND_PID=$!
 sleep 5
@@ -43,3 +32,4 @@ cd /mcp-runner/vibz
 bun run code-server --auth none --port 8080 "$BASE_DIR" &
 CODE_SERVER_PID=$!
 uv run main.py & MCP_PID=$!
+tail -f /dev/null

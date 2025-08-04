@@ -81,9 +81,9 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
   rustup update
 
 # Configuration
-ENV BASE_DIR="${BASE_DIR:-/mnt}"
-ENV DATA_DIR="${DATA_DIR:-/mnt/data}"
-ENV TEMPLATE_DIR="${TEMPLATE_DIR:-/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn}"
+ENV BASE_DIR=/mnt
+ENV DATA_DIR=/mnt/data
+ENV TEMPLATE_DIR=/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn
 
 # Clone & build convex
 RUN git config --global user.email "barrel@0bs.chat" && \
@@ -98,13 +98,20 @@ RUN git clone https://github.com/get-convex/convex-backend && \
   unzip convex-local-backend-x86_64-unknown-linux-gnu.zip && \
   rm convex-local-backend-x86_64-unknown-linux-gnu.zip
 
-RUN git clone https://github.com/0bs-chat/mcp-runner.git && \
-  cd mcp-runner && \
-  bun i && \
+RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
+  cd /mcp-runner/vibz && \
+  . $NVM_DIR/nvm.sh && \
+  nvm use default && \
   bun i && \
   backup_name="$BASE_DIR.bak.$(date +%s)" && \
   mv "$BASE_DIR" "$backup_name" && \
-  cp -r "$TEMPLATE_DIR" "$BASE_DIR"
+  cp -r "$TEMPLATE_DIR" "$BASE_DIR" && \
+  cd "$BASE_DIR" && \
+  bun i && \
+  git init && \
+  git add . && \
+  git commit -m "Initial commit" && \
+  echo "Template copied and git repository initialized"
 
 WORKDIR /mcp-runner/vibz
 CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bash start.sh'
