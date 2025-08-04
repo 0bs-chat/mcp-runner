@@ -40,7 +40,10 @@ RUN apt-get update && \
     xz-utils \
     build-essential \
     expect \
-    bash-completion && \
+    bash-completion \
+    cmake \
+    unzip \
+    && \
   rm -rf /var/lib/apt/lists/*
 
 # Configure a default UTF-8 locale (non-interactive)
@@ -62,9 +65,6 @@ RUN apt-get update && apt-get install -y curl && \
     nvm alias default $NODE_VERSION && \
     npm install -g bun
 
-ENV NODE_PATH=$NVM_DIR/$NODE_VERSION/lib/node_modules
-ENV PATH=$NVM_DIR/$NODE_VERSION/bin:$PATH
-
 # Install Astral UV
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN . $NVM_DIR/nvm.sh && \
@@ -74,10 +74,24 @@ RUN . $NVM_DIR/nvm.sh && \
     echo "Bun is available:" && \
     bun --version
 
-ENV MCP_COMMAND="bunx -y github-repo-mcp"
-ENV IDLE_TIMEOUT_MINS=15
-EXPOSE 8000
-CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bunx -y supergateway --stdio '${MCP_COMMAND}' --port 8000 --base-url http://0.0.0.0:8000 --ssePath /sse --messagePath /message"]
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
+    . $HOME/.cargo/env && \
+    rustup default stable && \
+    rustup update
 
-# sudo docker build -t mantrakp04/mcprunner:latest -f services/mcps/Dockerfile . --push
-# sudo docker run -it -e MCP_COMMAND="git clone https://github.com/0bs-chat/mcp-runner.git && cd mcp-runner/vibz && bash start.sh" -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 6790:6790 mantrakp04/mcprunner:latest
+# Clone & build convex
+RUN git clone https://github.com/get-convex/convex-backend && \
+    cd convex-backend && \
+    . $HOME/.cargo/env && \
+    cargo run -p keybroker --bin generate_key -- convex-self-hosted  $(cargo run -p keybroker --bin generate_secret) > ../.env.local && \
+    cd .. && \
+    wget https://github.com/get-convex/convex-backend/releases/download/precompiled-2025-08-04-b972983/convex-local-backend-x86_64-unknown-linux-gnu.zip && \
+    unzip convex-local-backend-x86_64-unknown-linux-gnu.zip && \
+    rm convex-local-backend-x86_64-unknown-linux-gnu.zip && \
+    git clone https://github.com/0bs-chat/mcp-runner.git
+
+WORKDIR /mcp-runner/vibz
+CMD ["./start.sh"]
+# sudo docker build -t mantrakp04/vibz:latest -f services/mcps/vibz/Dockerfile . --push
+# sudo docker run -it -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 6790:6790 mantrakp04/vibz:latest
