@@ -154,3 +154,5 @@ The template is located in `templates/convex-tanstackrouter-shadcn/` and include
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
+
+**Note**: Changing the template requires rebuilding the docker image
