@@ -43,7 +43,7 @@ RUN apt-get update && \
     bash-completion \
     cmake \
     unzip \
-    tmux \
+    screen \
     && \
   rm -rf /var/lib/apt/lists/*
 
@@ -104,8 +104,7 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   . $NVM_DIR/nvm.sh && \
   nvm use default && \
   bun i && \
-  # backup_name="$BASE_DIR.bak.$(date +%s)" && \
-  # mv "$BASE_DIR" "$backup_name" && \
+  rm -rf "$BASE_DIR" && \
   cp -r "$TEMPLATE_DIR" "$BASE_DIR" && \
   cd "$BASE_DIR" && \
   bun i && \
