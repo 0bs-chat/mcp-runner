@@ -36,5 +36,4 @@ screen -dmS code-server bash -c "cd /mcp-runner/vibz && bun run code-server --au
 # Start MCP server in screen session
 echo "Starting MCP server in screen session..."
 screen -dmS mcp-server bash -c "cd /mcp-runner/vibz && uv run main.py; exec bash"
-
-wait
+tail -f /dev/null
