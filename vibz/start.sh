@@ -25,7 +25,8 @@ bunx convex env set SITE_URL http://127.0.0.1:3000
 bun generateKeys.js | bash
 
 echo "Starting bun dev server..."
-bun dev & $SERVER_PID=$!
+bun dev --host 0.0.0.0 & $SERVER_PID=$!
+bunx convex dev & CONVEX_DEV_PID=$!
 
 echo "Starting VS Code server..."
 cd /mcp-runner/vibz

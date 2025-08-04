@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3000 --host 0.0.0.0 & bunx convex dev",
-    "start": "vite --port 3000 --host 0.0.0.0",
+    "dev": "vite --port 3000",
+    "start": "vite --port 3000",
     "build": "vite build && tsc",
     "serve": "vite preview",
     "test": "vitest run"
