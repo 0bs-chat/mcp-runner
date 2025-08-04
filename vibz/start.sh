@@ -1,11 +1,16 @@
 #!/bin/bash
 
+export CONVEX_CLOUD_ORIGIN=${HOST:-http://localhost}:3210
+export CONVEX_SITE_ORIGIN=${HOST:-http://localhost}:3211
+export NEXT_PUBLIC_DEPLOYMENT_URL=${HOST:-http://localhost}:6791
+export SITE_URL=${HOST:-http://localhost}:3000
+
 cd /convex-backend
 . $HOME/.cargo/env
 SECRET=$(cargo run -p keybroker --bin generate_secret)
 KEY=$(cargo run -p keybroker --bin generate_key -- convex-self-hosted $SECRET)
 echo "CONVEX_SELF_HOSTED_ADMIN_KEY='$KEY'" > /.env.local
-echo "CONVEX_SELF_HOSTED_URL='http://127.0.0.1:3210'" >> /.env.local
+echo "CONVEX_SELF_HOSTED_URL='$CONVEX_CLOUD_ORIGIN'" >> /.env.local
 
 # Start background services
 echo "Starting background services..."
@@ -22,7 +27,7 @@ screen -S mcp-server -X quit 2>/dev/null || true
 echo "Starting convex backend in screen session..."
 screen -dmS convex-backend bash -c "cd \"$BASE_DIR\" && /convex-local-backend --instance-name convex-self-hosted --instance-secret $SECRET -i 0.0.0.0; exec bash"
 
-bunx convex env set SITE_URL http://127.0.0.1:3000
+bunx convex env set SITE_URL $SITE_URL
 bun generateKeys.js | bash
 
 # Start bun dev server in screen session

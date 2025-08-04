@@ -116,4 +116,4 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
 WORKDIR /mcp-runner/vibz
 CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bash start.sh'
 # sudo docker build -t mantrakp04/vibz:latest -f services/mcps/vibz/Dockerfile . --push
-# sudo docker run -it -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 6790:6790 -p 3210:3210 mantrakp04/vibz:latest
+# sudo docker run -it -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 6791:6791 -p 3210:3210 -p 3211:3211 mantrakp04/vibz:latest
