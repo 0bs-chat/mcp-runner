@@ -43,7 +43,7 @@ echo "Starting background services..."
 CONVEX_PID=$!
 sleep 5
 bunx convex env set SITE_URL http://127.0.0.1:3000
-bun generateKeys.js
+bun generateKeys.js | bash
 
 bun dev --host 0.0.0.0 & bunx convex dev
 # # Start bun dev server
