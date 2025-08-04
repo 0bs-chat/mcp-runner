@@ -1,13 +1,5 @@
 #!/bin/bash
 
-# Configuration
-export BASE_DIR="${BASE_DIR:-/mnt}"
-export DATA_DIR="${DATA_DIR:-/mnt/data}"
-export TEMPLATE_DIR="${TEMPLATE_DIR:-/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn}"
-
-# Setup template and project structure
-echo "Setting up project environment..."
-
 cd /convex-backend
 . $HOME/.cargo/env
 SECRET=$(cargo run -p keybroker --bin generate_secret)
@@ -26,8 +18,6 @@ cp -r "$TEMPLATE_DIR" "$BASE_DIR"
 cd "$BASE_DIR"
 
 # Initialize git repository
-git config --global user.email "barrel@0bs.chat"
-git config --global user.name "BarrelOfLube"
 git init
 git add .
 git commit -m "Initial commit"
@@ -40,30 +30,16 @@ bun install
 # Start background services
 echo "Starting background services..."
 /convex-local-backend --instance-name convex-self-hosted --instance-secret $SECRET -i 0.0.0.0 &
-CONVEX_PID=$!
+BACKEND_PID=$!
 sleep 5
 bunx convex env set SITE_URL http://127.0.0.1:3000
 bun generateKeys.js | bash
 
-bun dev --host 0.0.0.0 & bunx convex dev
-# # Start bun dev server
-# echo "Starting bun dev server..."
-# bun dev &
-# DEV_PID=$!
+echo "Starting bun dev server..."
+bun dev & $SERVER_PID=$!
 
-# # Start VS Code server
-# echo "Starting VS Code server..."
-# cd ..
-# bun run code-server --auth none --port 8080 "$BASE_DIR" &
-# CODE_SERVER_PID=$!
-
-# echo "Background services started:"
-# echo "  - Convex dev (PID: $CONVEX_PID)"
-# echo "  - Convex auth (PID: $AUTH_PID)"
-# echo "  - Bun dev (PID: $DEV_PID)"
-# echo "  - VS Code server (PID: $CODE_SERVER_PID)"
-
-# # Start the main Python MCP server
-# echo "Starting vibz MCP server..."
-# ls -la
-# uv run main.py
+echo "Starting VS Code server..."
+cd /mcp-runner/vibz
+bun run code-server --auth none --port 8080 "$BASE_DIR" &
+CODE_SERVER_PID=$!
+uv run main.py & MCP_PID=$!

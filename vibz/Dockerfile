@@ -58,40 +58,55 @@ ENV NVM_DIR=/root/.nvm
 ENV NODE_VERSION=18
 
 RUN apt-get update && apt-get install -y curl && \
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
-    . $NVM_DIR/nvm.sh && \
-    nvm install $NODE_VERSION && \
-    nvm use $NODE_VERSION && \
-    nvm alias default $NODE_VERSION && \
-    npm install -g bun
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
+  . $NVM_DIR/nvm.sh && \
+  nvm install $NODE_VERSION && \
+  nvm use $NODE_VERSION && \
+  nvm alias default $NODE_VERSION && \
+  npm install -g bun
 
 # Install Astral UV
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN . $NVM_DIR/nvm.sh && \
-    nvm use default && \
-    echo "Bunx is available:" && \
-    bunx --version && \
-    echo "Bun is available:" && \
-    bun --version
+  nvm use default && \
+  echo "Bunx is available:" && \
+  bunx --version && \
+  echo "Bun is available:" && \
+  bun --version
 
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
-    . $HOME/.cargo/env && \
-    rustup default stable && \
-    rustup update
+  . $HOME/.cargo/env && \
+  rustup default stable && \
+  rustup update
+
+# Configuration
+ENV BASE_DIR="${BASE_DIR:-/mnt}"
+ENV DATA_DIR="${DATA_DIR:-/mnt/data}"
+ENV TEMPLATE_DIR="${TEMPLATE_DIR:-/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn}"
 
 # Clone & build convex
+RUN git config --global user.email "barrel@0bs.chat" && \
+  git config --global user.name "BarrelOfLube"
+
 RUN git clone https://github.com/get-convex/convex-backend && \
-    cd convex-backend && \
-    . $HOME/.cargo/env && \
-    cargo run -p keybroker --bin generate_key -- convex-self-hosted  $(cargo run -p keybroker --bin generate_secret) > ../.env.local && \
-    cd .. && \
-    wget https://github.com/get-convex/convex-backend/releases/download/precompiled-2025-08-04-b972983/convex-local-backend-x86_64-unknown-linux-gnu.zip && \
-    unzip convex-local-backend-x86_64-unknown-linux-gnu.zip && \
-    rm convex-local-backend-x86_64-unknown-linux-gnu.zip && \
-    git clone https://github.com/0bs-chat/mcp-runner.git
+  cd convex-backend && \
+  . $HOME/.cargo/env && \
+  cargo run -p keybroker --bin generate_key -- convex-self-hosted  $(cargo run -p keybroker --bin generate_secret) > ../.env.local && \
+  cd .. && \
+  wget https://github.com/get-convex/convex-backend/releases/download/precompiled-2025-08-04-b972983/convex-local-backend-x86_64-unknown-linux-gnu.zip && \
+  unzip convex-local-backend-x86_64-unknown-linux-gnu.zip && \
+  rm convex-local-backend-x86_64-unknown-linux-gnu.zip
+
+RUN git clone https://github.com/0bs-chat/mcp-runner.git && \
+  cd mcp-runner && \
+  bun i && \
+  bun i && \
+  backup_name="$BASE_DIR.bak.$(date +%s)" && \
+  mv "$BASE_DIR" "$backup_name" && \
+  cp -r "$TEMPLATE_DIR" "$BASE_DIR"
 
 WORKDIR /mcp-runner/vibz
-CMD /bin/bash -c 'git pull && bash start.sh'
+CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bash start.sh'
 # sudo docker build -t mantrakp04/vibz:latest -f services/mcps/vibz/Dockerfile . --push
 # sudo docker run -it -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 6790:6790 -p 3210:3210 mantrakp04/vibz:latest
