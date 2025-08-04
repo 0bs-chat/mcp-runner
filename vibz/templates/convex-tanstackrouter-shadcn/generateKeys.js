@@ -12,7 +12,7 @@ let result = Bun.spawnSync([
   "env",
   "set",
   "JWT_PRIVATE_KEY",
-  privateKey.trimEnd().replace(/\n/g, " ")
+  `"${privateKey.trimEnd().replace(/\n/g, " ")}"`
 ]);
 console.log(result.stdout.toString(), result.stderr.toString());
 
