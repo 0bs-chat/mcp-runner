@@ -39,22 +39,13 @@ bun install
 
 # Start background services
 echo "Starting background services..."
-/convex-local-backend --instance-name convex-self-hosted --instance-secret $SECRET &
+/convex-local-backend --instance-name convex-self-hosted --instance-secret $SECRET -i 0.0.0.0 &
 CONVEX_PID=$!
 sleep 5
 bunx convex env set SITE_URL http://127.0.0.1:3000
-bunx convex dev & CONVEX_DEV_PID=$!
-bunx @convex-dev/auth --skip-git-check --web-server-url http://localhost:3000
+bun generateKeys.js
 
-echo "Setting up Convex auth..."
-expect -c '
-  spawn bunx @convex-dev/auth --skip-git-check --web-server-url http://localhost:3000
-  expect "Ready to continue?"
-  send "\r"
-  interact
-' &
-AUTH_PID=$!
-
+bun dev --host 0.0.0.0 & bunx convex dev
 # # Start bun dev server
 # echo "Starting bun dev server..."
 # bun dev &

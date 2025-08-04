@@ -6,15 +6,13 @@ const privateKey = await exportPKCS8(keys.privateKey);
 const publicKey = await exportJWK(keys.publicKey);
 const jwks = JSON.stringify({ keys: [{ use: "sig", ...publicKey }] });
 
-// Set JWT_PRIVATE_KEY - use base64 encoding to avoid command line issues
-const privateKeyBase64 = Buffer.from(privateKey).toString('base64');
 let result = Bun.spawnSync([
   "bunx",
   "convex",
   "env",
   "set",
   "JWT_PRIVATE_KEY",
-  privateKeyBase64
+  privateKey.trimEnd().replace(/\n/g, " ")
 ]);
 console.log(result.stdout.toString(), result.stderr.toString());
 
