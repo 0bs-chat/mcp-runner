@@ -3,17 +3,20 @@
 # Configuration
 export BASE_DIR="${BASE_DIR:-/mnt}"
 export DATA_DIR="${DATA_DIR:-/mnt/data}"
-export TEMPLATE_DIR="${TEMPLATE_DIR:-templates/convex-tanstackrouter-shadcn}"
+export TEMPLATE_DIR="${TEMPLATE_DIR:-/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn}"
 
 # Setup template and project structure
 echo "Setting up project environment..."
 
 cd /convex-backend
 . $HOME/.cargo/env
-cargo run -p keybroker --bin generate_key -- convex-self-hosted  $(cargo run -p keybroker --bin generate_secret) > ../.env.local
-cp /.env.local ${TEMPLATE_DIR}/.env.local
+SECRET=$(cargo run -p keybroker --bin generate_secret)
+KEY=$(cargo run -p keybroker --bin generate_key -- convex-self-hosted $SECRET)
+echo "CONVEX_SELF_HOSTED_ADMIN_KEY='$KEY'" > /.env.local
+echo "CONVEX_SELF_HOSTED_URL='http://127.0.0.1:3210'" >> /.env.local
 
-cd $BASE_DIR
+cd /mcp-runner/vibz
+cp /.env.local ${TEMPLATE_DIR}/.env.local
 bun i
 backup_name="$BASE_DIR.bak.$(date +%s)"
 mv "$BASE_DIR" "$backup_name"
@@ -36,22 +39,12 @@ bun install
 
 # Start background services
 echo "Starting background services..."
-
-# Start Convex dev server
-echo "Starting Convex dev server..."
-expect -c '
-  spawn bunx convex dev --local
-  expect "Choose a name:"
-  send "\r"
-  expect "Continue?"
-  send "\r"
-  expect "Continue?"
-  send "Y\r\r"
-  interact
-' &
+/convex-local-backend --instance-name convex-self-hosted --instance-secret $SECRET &
 CONVEX_PID=$!
-
-sleep 40
+sleep 5
+bunx convex env set SITE_URL http://127.0.0.1:3000
+bunx convex dev & CONVEX_DEV_PID=$!
+bunx @convex-dev/auth --skip-git-check --web-server-url http://localhost:3000
 
 echo "Setting up Convex auth..."
 expect -c '
