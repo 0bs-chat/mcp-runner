@@ -31,7 +31,7 @@ screen -dmS bun-dev bash -c "cd \"$BASE_DIR\" && bun dev --host 0.0.0.0 & bunx c
 
 # Start VS Code server in screen session
 echo "Starting VS Code server in screen session..."
-screen -dmS code-server bash -c "cd /mcp-runner/vibz && bun run code-server --auth none --port 8080 \"$BASE_DIR\"; exec bash"
+screen -dmS code-server bash -c "cd /mcp-runner/vibz && bun run code-server --auth none --port 8080 --host 0.0.0.0 \"$BASE_DIR\"; exec bash"
 
 # Start MCP server in screen session
 echo "Starting MCP server in screen session..."
