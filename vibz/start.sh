@@ -5,6 +5,16 @@ export CONVEX_SITE_ORIGIN=${HOST:-http://localhost}:3211
 export NEXT_PUBLIC_DEPLOYMENT_URL=${HOST:-http://localhost}:6791
 export SITE_URL=${HOST:-http://localhost}:3000
 
+# Install dependencies
+echo "Installing dependencies..."
+cd /mcp-runner/vibz
+. $NVM_DIR/nvm.sh
+nvm use default
+bun i
+
+cd "$BASE_DIR"
+bun i
+
 cd /convex-backend
 . $HOME/.cargo/env
 SECRET=$(cargo run -p keybroker --bin generate_secret)

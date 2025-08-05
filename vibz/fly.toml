@@ -1,0 +1,77 @@
+# fly.toml app configuration file generated for vibz-withered-moon-1652 on 2025-08-05T06:44:00-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'vibz-withered-moon-1652'
+primary_region = 'sea'
+
+[build]
+  image = 'mantrakp04/vibz:latest'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 3000
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8000
+  processes = ['app']
+
+  [[services.ports]]
+    port = 8000
+    handlers = ['tls', 'http']
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8080
+  processes = ['app']
+
+  [[services.ports]]
+    port = 8080
+    handlers = ['tls', 'http']
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 6791
+  processes = ['app']
+
+  [[services.ports]]
+    port = 6791
+    handlers = ['tls', 'http']
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 3210
+  processes = ['app']
+
+  [[services.ports]]
+    port = 3210
+    handlers = ['tls', 'http']
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 3211
+  processes = ['app']
+
+  [[services.ports]]
+    port = 3211
+    handlers = ['tls', 'http']
+
+[[vm]]
+  memory = '4gb'
+  cpu_kind = 'shared'
+  cpus = 4
