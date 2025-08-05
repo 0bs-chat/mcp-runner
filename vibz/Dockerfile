@@ -29,6 +29,7 @@ RUN apt-get update && \
     htop \
     dstat \
     vim \
+    tmux \
     curl \
     git \
     jq \
@@ -102,14 +103,17 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   cd /mcp-runner/vibz && \
   . $NVM_DIR/nvm.sh && \
   nvm use default && \
+  bun i && \
   rm -rf "$BASE_DIR" && \
   cp -r "$TEMPLATE_DIR" "$BASE_DIR" && \
   cd "$BASE_DIR" && \
+  bun i && \
   git init && \
   git add . && \
   git commit -m "Initial commit" && \
   echo "Template copied and git repository initialized"
 
 WORKDIR /mcp-runner/vibz
-CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bash start.sh'# sudo docker build -t mantrakp04/vibz:latest -f services/mcps/vibz/Dockerfile . --push
+CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bash start.sh'
+# sudo docker build -t mantrakp04/vibz:latest -f services/mcps/vibz/Dockerfile . --push
 # sudo docker run -it -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 6791:6791 -p 3210:3210 -p 3211:3211 mantrakp04/vibz:latest
