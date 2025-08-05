@@ -33,24 +33,15 @@ Vibz MCP is a development tool that provides an AI-powered code generation servi
 - [uv](https://docs.astral.sh/uv/) package manager
 - [Bun](https://bun.sh/) JavaScript runtime
 
-### Install with uv
-
-```bash
-# Clone the repository (if not already done)
-git clone --recurse-submodules https://github.com/0bs-chat/zerobs.git
-cd services/mcps/vibz
-
-# Install dependencies with uv
-uv sync
-```
-
 ## Usage
 
 ### Starting the MCP Server
 
 ```bash
 # Run the MCP server
-uv run main.py
+git clone --recurse-submodules https://github.com/0bs-chat/zerobs.git
+cd services/mcps/vibz
+bash start.sh
 ```
 
 ### MCP Tools
