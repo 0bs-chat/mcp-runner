@@ -75,37 +75,20 @@ RUN . $NVM_DIR/nvm.sh && \
   echo "Bun is available:" && \
   bun --version
 
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
-  . $HOME/.cargo/env && \
-  rustup default stable && \
-  rustup update
-
 # Configuration
 ENV BASE_DIR=/mnt
 ENV DATA_DIR=/mnt/data
 ENV TEMPLATE_DIR=/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn
 
 # Clone & build convex
-RUN git config --global user.email "barrel@0bs.chat" && \
-  git config --global user.name "BarrelOfLube"
-
-RUN git clone https://github.com/get-convex/convex-backend && \
-  cd convex-backend && \
-  . $HOME/.cargo/env && \
-  cargo run -p keybroker --bin generate_key -- convex-self-hosted  $(cargo run -p keybroker --bin generate_secret) > ../.env.local && \
-  cd .. && \
-  wget https://github.com/get-convex/convex-backend/releases/download/precompiled-2025-08-04-b972983/convex-local-backend-x86_64-unknown-linux-gnu.zip && \
-  unzip convex-local-backend-x86_64-unknown-linux-gnu.zip && \
-  rm convex-local-backend-x86_64-unknown-linux-gnu.zip
+RUN git config --global user.email "vibz@0bs.chat" && \
+  git config --global user.name "VibzBot"
 
 RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   cd /mcp-runner/vibz && \
   . $NVM_DIR/nvm.sh && \
   nvm use default && \
-  bun i && \
-  rm -rf "$BASE_DIR" && \
-  cp -r "$TEMPLATE_DIR" "$BASE_DIR" && \
+  cp -r "$TEMPLATE_DIR/." "$BASE_DIR" && \
   cd "$BASE_DIR" && \
   bun i && \
   git init && \
@@ -114,6 +97,6 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   echo "Template copied and git repository initialized"
 
 WORKDIR /mcp-runner/vibz
-CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bash start.sh'
+CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bun run start.ts'
 # sudo docker build -t mantrakp04/vibz:latest -f services/mcps/vibz/Dockerfile . --push
-# sudo docker run -it -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 6791:6791 -p 3210:3210 -p 3211:3211 mantrakp04/vibz:latest
+# sudo docker run -it -p 8000:8000 -p 3001:3000 -p 8080:8080 -p 6791:6791 -p 3210:3210 -p 3211:3211 mantrakp04/vibz:latest
