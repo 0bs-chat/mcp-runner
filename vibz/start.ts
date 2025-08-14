@@ -115,11 +115,11 @@ async function main() {
   const publicKey = await exportJWK(keys.publicKey);
   const jwks = JSON.stringify({ keys: [{ use: "sig", ...publicKey }] });
   
-  execSync(`bunx convex env set JWT_PRIVATE_KEY '${privateKey.trimEnd().replace(/\n/g, " ")}'`, { 
+  execSync(`bunx convex env set JWT_PRIVATE_KEY ${privateKey.trimEnd().replace(/\n/g, " ")}`, { 
     stdio: "inherit", 
     cwd: process.env.BASE_DIR 
   });
-  execSync(`bunx convex env set JWKS '${jwks}'`, { 
+  execSync(`bunx convex env set JWKS ${jwks}`, { 
     stdio: "inherit", 
     cwd: process.env.BASE_DIR 
   });
