@@ -79,4 +79,4 @@ def install_packages(packages: List[str]):
 
 if __name__ == "__main__":
     print("Starting vibz MCP server...")
-    mcp.run(transport="sse")
+    mcp.run(transport="streamable-http")
