@@ -88,8 +88,8 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   cd /mcp-runner/vibz && \
   . $NVM_DIR/nvm.sh && \
   nvm use default && \
-  bun i && \
   uv sync && \
+  curl -fsSL https://code-server.dev/install.sh | sh && \
   cp -r "$TEMPLATE_DIR/." "$BASE_DIR" && \
   cd "$BASE_DIR" && \
   bun i && \

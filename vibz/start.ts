@@ -1,4 +1,4 @@
-import { writeFileSync, existsSync, appendFileSync, readFileSync } from "fs";
+import { writeFileSync, existsSync, readFileSync } from "fs";
 import { exec, execSync } from "child_process";
 
 // 1. Get CONVEX_ACCESS_TOKEN from environment
@@ -23,7 +23,7 @@ function checkConvexDeployKey(): boolean {
 }
 
 function startCodeServer(): void {
-  const codeServerProcess = exec(`bun run code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
+  const codeServerProcess = exec(`code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
   codeServerProcess.stdout?.pipe(process.stdout, { end: false });
   codeServerProcess.stderr?.pipe(process.stderr, { end: false });
 }
