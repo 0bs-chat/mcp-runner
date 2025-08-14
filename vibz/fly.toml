@@ -1,0 +1,28 @@
+# fly.toml app configuration file generated for vibz-bitter-breeze-4311 on 2025-08-14T06:43:06-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'vibz-bitter-breeze-4311'
+primary_region = 'sea'
+
+[experimental]
+  auto_rollback = true
+
+[build]
+
+[env]
+  CONVEX_ACCESS_TOKEN = 'team:barrel-lube|eyJ2MiI6IjFiZTFkNWIzYjhhNTQwZWNhMTJkNmQxYzg3NWFmZWQ1In0='
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '4gb'
+  cpu_kind = 'shared'
+  cpus = 4

@@ -44,6 +44,7 @@ RUN apt-get update && \
     cmake \
     unzip \
     screen \
+    nginx \
     && \
   rm -rf /var/lib/apt/lists/*
 
@@ -98,7 +99,11 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   git commit -m "Initial commit" && \
   echo "Template copied and git repository initialized"
 
+# Copy and setup nginx configuration
+COPY services/mcps/vibz/nginx.conf /etc/nginx/nginx.conf
+RUN nginx -t
+
 WORKDIR /mcp-runner/vibz
 CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bun run start.ts'
 # sudo docker build -t mantrakp04/vibz:latest -f services/mcps/vibz/Dockerfile . --push
-# sudo docker run -it -p 8000:8000 -p 3001:3000 -p 8080:8080 mantrakp04/vibz:latest
+# sudo docker run -it -p 80:80 mantrakp04/vibz:latest

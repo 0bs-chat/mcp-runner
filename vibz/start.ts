@@ -34,12 +34,19 @@ function startMcpServer(): void {
   mcpServerProcess.stderr?.pipe(process.stderr, { end: false });
 }
 
+function startNginx(): void {
+  const nginxProcess = exec(`nginx -g "daemon off;"`, { cwd: "/mcp-runner/vibz" });
+  nginxProcess.stdout?.pipe(process.stdout, { end: false });
+  nginxProcess.stderr?.pipe(process.stderr, { end: false });
+}
+
 async function main() {
   const hasConvexDeployKey = checkConvexDeployKey();
   
   if (hasConvexDeployKey) {
     startCodeServer();
     startMcpServer();
+    startNginx();
     execSync("bun dev", { stdio: "inherit", cwd: process.env.BASE_DIR });
     return;
   }
@@ -105,6 +112,7 @@ async function main() {
   // 7. Start code server in parallel and then start the dev server
   startCodeServer();
   startMcpServer();
+  startNginx();
   execSync("bun dev", { stdio: "inherit", cwd: process.env.BASE_DIR });
 }
 
