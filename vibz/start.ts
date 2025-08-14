@@ -44,9 +44,9 @@ async function main() {
   const hasConvexDeployKey = checkConvexDeployKey();
   
   if (hasConvexDeployKey) {
+    startNginx();
     startCodeServer();
     startMcpServer();
-    startNginx();
     execSync("bun dev", { stdio: "inherit", cwd: process.env.BASE_DIR });
     return;
   }
@@ -110,9 +110,9 @@ async function main() {
   authProcess.stderr?.pipe(process.stderr, { end: false });
 
   // 7. Start code server in parallel and then start the dev server
+  startNginx();
   startCodeServer();
   startMcpServer();
-  startNginx();
   execSync("bun dev", { stdio: "inherit", cwd: process.env.BASE_DIR });
 }
 
