@@ -1,0 +1,13 @@
+{
+  "name": "vibz",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "jose": "^6.0.12"
+  }
+}

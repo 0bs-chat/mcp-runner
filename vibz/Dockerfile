@@ -93,6 +93,7 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   curl -fsSL https://code-server.dev/install.sh | sh && \
   cp -r /mcp-runner/vibz/nginx.conf /etc/nginx/nginx.conf && \
   nginx -t && \
+  bun i && \
   cp -r "$TEMPLATE_DIR/." "$BASE_DIR" && \
   cd "$BASE_DIR" && \
   bun i && \
