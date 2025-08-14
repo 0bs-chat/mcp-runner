@@ -1,8 +1,6 @@
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { exec, execSync } from "child_process";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
+import { generateKeyPair, exportPKCS8, exportJWK } from "jose";
 
 // 1. Get CONVEX_ACCESS_TOKEN from environment
 const CONVEX_ACCESS_TOKEN = process.env.CONVEX_ACCESS_TOKEN;
@@ -105,14 +103,20 @@ async function main() {
   // 5. Write CONVEX_DEPLOY_KEY to .env.local
   const envPath = `${process.env.BASE_DIR}/.env.local`;
   const envLine = `CONVEX_DEPLOY_KEY=${deployKey}`;
-  await writeFileSync(envPath, envLine)
+  writeFileSync(envPath, envLine)
 
-  // 6. Configure auth (wait for this to finish)
-  const { stdout, stderr } = await execAsync("sleep 10 && bunx @convex-dev/auth --allow-dirty-git-state --web-server-url http://localhost:3000", { 
-    cwd: process.env.BASE_DIR
+  // 6. Set environment variables for auth
+  execSync("bunx convex env set SITE_URL http://localhost:3000", { stdio: "inherit", cwd: process.env.BASE_DIR });
+  
+  const keys = await generateKeyPair("RS256", {
+    extractable: true,
   });
-  if (stdout) console.log(stdout);
-  if (stderr) console.error(stderr);
+  const privateKey = await exportPKCS8(keys.privateKey);
+  const publicKey = await exportJWK(keys.publicKey);
+  const jwks = JSON.stringify({ keys: [{ use: "sig", ...publicKey }] });
+  
+  execSync(`bunx convex env set JWT_PRIVATE_KEY "${privateKey.trimEnd().replace(/\n/g, " ")}"`, { stdio: "inherit", cwd: process.env.BASE_DIR });
+  execSync(`bunx convex env set JWKS '${jwks}'`, { stdio: "inherit", cwd: process.env.BASE_DIR });
 
   // 7. Start code server in parallel and then start the dev server
   startCodeServer();
