@@ -115,8 +115,22 @@ async function main() {
   const publicKey = await exportJWK(keys.publicKey);
   const jwks = JSON.stringify({ keys: [{ use: "sig", ...publicKey }] });
   
-  execSync(`bunx convex env set JWT_PRIVATE_KEY "${privateKey.trimEnd().replace(/\n/g, " ")}"`, { stdio: "inherit", cwd: process.env.BASE_DIR });
-  execSync(`bunx convex env set JWKS '${jwks}'`, { stdio: "inherit", cwd: process.env.BASE_DIR });
+  // Use environment variables to pass the values safely
+  process.env.TEMP_JWT_PRIVATE_KEY = privateKey.trimEnd().replace(/\n/g, " ");
+  process.env.TEMP_JWKS = jwks;
+  
+  execSync(`bunx convex env set JWT_PRIVATE_KEY "$TEMP_JWT_PRIVATE_KEY"`, { 
+    stdio: "inherit", 
+    cwd: process.env.BASE_DIR 
+  });
+  execSync(`bunx convex env set JWKS "$TEMP_JWKS"`, { 
+    stdio: "inherit", 
+    cwd: process.env.BASE_DIR 
+  });
+  
+  // Clean up temporary environment variables
+  delete process.env.TEMP_JWT_PRIVATE_KEY;
+  delete process.env.TEMP_JWKS;
 
   // 7. Start code server in parallel and then start the dev server
   startCodeServer();
