@@ -108,8 +108,8 @@ async function main() {
   await writeFileSync(envPath, envLine)
 
   // 6. Configure auth (wait for this to finish)
-  const { stdout, stderr } = await execAsync("sleep 2 && bunx @convex-dev/auth --allow-dirty-git-state --web-server-url http://localhost:3000", { 
-    cwd: process.env.BASE_DIR 
+  const { stdout, stderr } = await execAsync("sleep 10 && bunx @convex-dev/auth --allow-dirty-git-state --web-server-url http://localhost:3000", { 
+    cwd: process.env.BASE_DIR
   });
   if (stdout) console.log(stdout);
   if (stderr) console.error(stderr);
