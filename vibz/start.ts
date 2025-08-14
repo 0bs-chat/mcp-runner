@@ -102,10 +102,10 @@ async function main() {
   // 5. Write CONVEX_DEPLOY_KEY to .env.local
   const envPath = `${process.env.BASE_DIR}/.env.local`;
   const envLine = `CONVEX_DEPLOY_KEY=${deployKey}`;
-  writeFileSync(envPath, envLine)
+  await writeFileSync(envPath, envLine)
 
   // 6. Configure auth (do not wait for this to finish)
-  const authProcess = exec("sleep 10 && bunx @convex-dev/auth --allow-dirty-git-state --web-server-url http://localhost:3000", { cwd: process.env.BASE_DIR });
+  const authProcess = exec("sleep 2 && bunx @convex-dev/auth --allow-dirty-git-state --web-server-url http://localhost:3000", { cwd: process.env.BASE_DIR });
   authProcess.stdout?.pipe(process.stdout, { end: false });
   authProcess.stderr?.pipe(process.stderr, { end: false });
 
