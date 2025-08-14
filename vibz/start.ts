@@ -1,5 +1,8 @@
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { exec, execSync } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
 
 // 1. Get CONVEX_ACCESS_TOKEN from environment
 const CONVEX_ACCESS_TOKEN = process.env.CONVEX_ACCESS_TOKEN;
@@ -104,10 +107,12 @@ async function main() {
   const envLine = `CONVEX_DEPLOY_KEY=${deployKey}`;
   await writeFileSync(envPath, envLine)
 
-  // 6. Configure auth (do not wait for this to finish)
-  const authProcess = exec("sleep 2 && bunx @convex-dev/auth --allow-dirty-git-state --web-server-url http://localhost:3000", { cwd: process.env.BASE_DIR });
-  authProcess.stdout?.pipe(process.stdout, { end: false });
-  authProcess.stderr?.pipe(process.stderr, { end: false });
+  // 6. Configure auth (wait for this to finish)
+  const { stdout, stderr } = await execAsync("sleep 2 && bunx @convex-dev/auth --allow-dirty-git-state --web-server-url http://localhost:3000", { 
+    cwd: process.env.BASE_DIR 
+  });
+  if (stdout) console.log(stdout);
+  if (stderr) console.error(stderr);
 
   // 7. Start code server in parallel and then start the dev server
   startCodeServer();
