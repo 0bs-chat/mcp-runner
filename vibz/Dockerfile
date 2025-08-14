@@ -91,6 +91,8 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   nvm use default && \
   uv sync && \
   curl -fsSL https://code-server.dev/install.sh | sh && \
+  cp -r /mcp-runner/vibz/nginx.conf /etc/nginx/nginx.conf && \
+  nginx -t && \
   cp -r "$TEMPLATE_DIR/." "$BASE_DIR" && \
   cd "$BASE_DIR" && \
   bun i && \
@@ -98,10 +100,6 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   git add . && \
   git commit -m "Initial commit" && \
   echo "Template copied and git repository initialized"
-
-# Copy and setup nginx configuration
-COPY services/mcps/vibz/nginx.conf /etc/nginx/nginx.conf
-RUN nginx -t
 
 WORKDIR /mcp-runner/vibz
 CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bun run start.ts'

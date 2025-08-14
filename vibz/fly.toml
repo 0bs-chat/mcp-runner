@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for vibz-bitter-breeze-4311 on 2025-08-14T06:43:06-07:00
+# fly.toml app configuration file generated for vibz-proud-meadow-2288 on 2025-08-14T08:29:44-07:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'vibz-bitter-breeze-4311'
+app = 'vibz-proud-meadow-2288'
 primary_region = 'sea'
 
 [experimental]
@@ -12,12 +12,12 @@ primary_region = 'sea'
 [build]
 
 [env]
-  CONVEX_ACCESS_TOKEN = 'team:barrel-lube|eyJ2MiI6IjFiZTFkNWIzYjhhNTQwZWNhMTJkNmQxYzg3NWFmZWQ1In0='
+
 
 [http_service]
   internal_port = 80
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
