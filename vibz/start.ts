@@ -52,7 +52,7 @@ const excludedFiles = [
   "convex/schema.ts",
   "convex/http.ts",
   "convex/auth.ts",
-  "src/route/index.tsx",
+  "src/routes/index.tsx",
   "package.json"
 ];
 
