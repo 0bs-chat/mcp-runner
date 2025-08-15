@@ -92,6 +92,7 @@ async function main() {
   // 4. Commit git changes
   execSync(`git add . ${excludedFiles.map(file => `:!${file}`).join(" ")}`, { stdio: "inherit", cwd: process.env.BASE_DIR });
   execSync(`git commit -m "Initial commit"`, { stdio: "inherit", cwd: process.env.BASE_DIR });
+  execSync(`git add .`, { stdio: "inherit", cwd: process.env.BASE_DIR });
   
   // 5. Start code server in parallel and then start the dev server
   startServer();
