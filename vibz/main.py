@@ -45,11 +45,7 @@ def get_diff() -> str:
     - Fallback: explanatory message
     """
     repo = Repo(BASE_DIR)
-    commits = list(repo.iter_commits("HEAD", max_count=2))
-    if len(commits) >= 2:
-        return repo.git.diff("HEAD~1", "HEAD") or "(No changes between last two commits)"
-
-    wt_diff = repo.git.diff()
+    wt_diff = str(repo.git.diff())
     return wt_diff or "(No uncommitted changes)"
 
 @mcp.prompt()
