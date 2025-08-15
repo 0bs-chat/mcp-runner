@@ -37,16 +37,16 @@ def run_lint() -> str:
     return result.stdout + result.stderr
 
 def get_diff() -> str:
-    """Return a human-readable diff string.
-
-    Preference:
-    - If there are at least 2 commits: diff between HEAD~1 and HEAD
-    - Else: show working tree diff vs HEAD
-    - Fallback: explanatory message
-    """
-    repo = Repo(BASE_DIR)
-    wt_diff = str(repo.git.diff())
-    return wt_diff or "(No uncommitted changes)"
+    try:
+        result = subprocess.run(
+            ["git", "diff", "|", "cat"],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout or "(No uncommitted changes)"
+    except Exception as e:
+        return f"Error getting diff: {e}"
 
 @mcp.prompt()
 def diff_prompt():
