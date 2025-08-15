@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInForm } from "../components/signin-form";
+import { SignInForm } from "@/components/signin-form";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 export const Route = createRootRoute({

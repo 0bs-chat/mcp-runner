@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Toaster } from "sonner";
-import { SignOutButton } from "../components/signout-btn";
+import { SignOutButton } from "@/components/signout-btn";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
