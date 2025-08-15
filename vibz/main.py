@@ -53,7 +53,11 @@ def get_diff() -> str:
     print(diff)
     return "\n".join(diff)
 
-@mcp.tool(description=template_description + f"\n\nDiff: " + """
+@mcp.prompt()
+def diff_prompt():
+    return template_description + f"\n\nDiff: {get_diff()}"
+
+@mcp.tool(description="""
 Create a complete code project with multiple files.
 
 Args:
