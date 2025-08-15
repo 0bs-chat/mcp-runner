@@ -45,6 +45,7 @@ def get_diff() -> str:
             capture_output=True,
             text=True,
         )
+        subprocess.run(["git", "commit", "-m", "user modified code"], cwd=BASE_DIR)
         return result.stdout or "(No uncommitted changes)"
     except Exception as e:
         return f"Error getting diff: {e}"
