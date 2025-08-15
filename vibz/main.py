@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import List, Dict, Set
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
+from difflib import unified_diff
+from git import Repo
 
 mcp = FastMCP("vibz", host="0.0.0.0", port=8000)
 
@@ -17,8 +19,15 @@ BASE_DIR = os.getenv("BASE_DIR", "./data")
 DATA_DIR = os.getenv("DATA_DIR", "./data")
 TEMPLATE_DIR = os.getenv("TEMPLATE_DIR", "templates/convex-tanstackrouter-shadcn")
 
-template_description = Path(f"{TEMPLATE_DIR}/desc.md").read_text()
-diff = ""
+template_description = f"""
+
+Args:
+    project_name: str : A descriptive name for the project.
+    planning: str : A brief planning statement.
+    code: {'name': str, 'content': str}[] : List of code files.
+
+{Path(f"{TEMPLATE_DIR}/desc.md").read_text()}
+"""
 
 lint_errors: Set[str] = set()
 
@@ -41,11 +50,18 @@ def run_lint() -> str:
     )
     return result.stdout + result.stderr
 
-class CodeFile(BaseModel):
-    name: str
-    content: str
+def get_diff() -> str:
+    repo = Repo(DATA_DIR)
+    diff = unified_diff(
+        repo.head.commit.tree.blobs[0].data_stream.read().decode("utf-8"),
+        repo.head.commit.tree.blobs[1].data_stream.read().decode("utf-8"),
+        fromfile="old",
+        tofile="new",
+    )
+    print(diff)
+    return "\n".join(diff)
 
-@mcp.tool(description=template_description + f"\n\nDiff: {diff}" + """
+@mcp.tool(description=template_description + f"\n\nDiff: {get_diff()}" + """
 Create a complete code project with multiple files.
 
 Args:

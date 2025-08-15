@@ -76,8 +76,9 @@ RUN . $NVM_DIR/nvm.sh && \
 
 ENV MCP_COMMAND="bunx -y github-repo-mcp"
 ENV IDLE_TIMEOUT_MINS=15
+ENV OAUTH_TOKEN="sheesh"
 EXPOSE 8000
-CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bunx -y supergateway --stdio '${MCP_COMMAND}' --port 8000 --base-url http://0.0.0.0:8000 --ssePath /sse --messagePath /message"]
+CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bunx -y supergateway --stdio '${MCP_COMMAND}' --port 8000 --base-url http://0.0.0.0:8000 --ssePath /sse --messagePath /message --oauth2Bearer '${OAUTH_TOKEN}' --healthEndpoint /healthz"]
 
-# sudo docker build -t mantrakp04/mcprunner:latest -f services/mcps/Dockerfile . --push
+# sudo docker build -t mantrakp04/mcprunner:v1 -f services/mcps/Dockerfile . --push
 # sudo docker run -it -e MCP_COMMAND="git clone https://github.com/0bs-chat/mcp-runner.git && cd mcp-runner/vibz && bash start.sh" -p 8000:8000 -p 3000:3000 -p 8080:8080 -p 6790:6790 mantrakp04/mcprunner:latest
