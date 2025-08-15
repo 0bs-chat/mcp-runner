@@ -98,8 +98,6 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   cd "$BASE_DIR" && \
   bun i && \
   git init && \
-  git add . && \
-  git commit -m "Initial commit" && \
   echo "Template copied and git repository initialized"
 
 WORKDIR /mcp-runner/vibz

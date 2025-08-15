@@ -38,8 +38,9 @@ def run_lint() -> str:
 
 def get_diff() -> str:
     try:
+        subprocess.run(["git", "add", "."], cwd=BASE_DIR)
         result = subprocess.run(
-            ["git", "diff", "|", "cat"],
+            ["git", "diff", "--staged"],
             cwd=BASE_DIR,
             capture_output=True,
             text=True,
@@ -53,7 +54,8 @@ def diff_prompt():
     return template_description + f"\n\nDiff: {get_diff()}"
 
 @mcp.tool(description="""
-Create a complete code project with multiple files.
+This tool builds a complete, production-ready web application based on your requirements.
+It uses a pre-configured template with a Convex backend, TanStack Router for navigation, and shadcn/ui for components.
 
 Args:
     project_name: str : A descriptive name for the project.
