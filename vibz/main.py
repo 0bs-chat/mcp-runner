@@ -19,15 +19,7 @@ BASE_DIR = os.getenv("BASE_DIR", "./data")
 DATA_DIR = os.getenv("DATA_DIR", "./data")
 TEMPLATE_DIR = os.getenv("TEMPLATE_DIR", "templates/convex-tanstackrouter-shadcn")
 
-template_description = f"""
-
-Args:
-    project_name: str : A descriptive name for the project.
-    planning: str : A brief planning statement.
-    code: {'name': str, 'content': str}[] : List of code files.
-
-{Path(f"{TEMPLATE_DIR}/desc.md").read_text()}
-"""
+template_description = Path(f"{TEMPLATE_DIR}/desc.md").read_text()
 
 lint_errors: Set[str] = set()
 
@@ -61,7 +53,7 @@ def get_diff() -> str:
     print(diff)
     return "\n".join(diff)
 
-@mcp.tool(description=template_description + f"\n\nDiff: {get_diff()}" + """
+@mcp.tool(description=template_description + f"\n\nDiff: " + """
 Create a complete code project with multiple files.
 
 Args:
