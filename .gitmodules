@@ -1,0 +1,3 @@
+[submodule "supergateway"]
+	path = supergateway
+	url = https://github.com/0bs-chat/supergateway
