@@ -70,8 +70,29 @@ def code_project(project_name: str, planning: str, code: List[Dict[str, str]]):
         "convex/auth.ts", "convex/auth.config.ts", "convex/_generated"
     ]
     try:
+        # Helper predicates for allow/exclude
+        def is_allowed(relative_path: str) -> bool:
+            norm = Path(relative_path).as_posix()
+            for allowed in allow_paths:
+                if norm == allowed or norm.startswith(f"{allowed}/"):
+                    return True
+            return False
+
+        def is_excluded(relative_path: str) -> bool:
+            norm = Path(relative_path).as_posix()
+            for excluded in exclude_paths:
+                if norm == excluded or norm.startswith(f"{excluded}/"):
+                    return True
+            return False
+
         for file in code:
-            path = os.path.join(BASE_DIR, file["name"])
+            relative_path = file["name"]
+            if not is_allowed(relative_path):
+                continue
+            if is_excluded(relative_path):
+                continue
+
+            path = os.path.join(BASE_DIR, relative_path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w", encoding="utf-8") as f:
                 f.write(file["content"])
