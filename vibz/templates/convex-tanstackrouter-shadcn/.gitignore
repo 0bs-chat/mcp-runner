@@ -8,3 +8,5 @@ count.txt
 .nitro
 .tanstack
 bun.lock
+*.gen.ts
+_generated

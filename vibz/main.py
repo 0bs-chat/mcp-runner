@@ -64,6 +64,11 @@ Args:
     code: {'name': str, 'content': str}[] : List of code files.
 """)
 def code_project(project_name: str, planning: str, code: List[Dict[str, str]]):
+    allow_paths = ["src", "convex", "README.md"]
+    exclude_paths = [
+        "src/routes/__root.tsx", "src/main.tsx", "src/components/ui", "src/styles.css",
+        "convex/auth.ts", "convex/auth.config.ts", "convex/_generated"
+    ]
     try:
         for file in code:
             path = os.path.join(BASE_DIR, file["name"])
