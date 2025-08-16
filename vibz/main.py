@@ -90,12 +90,6 @@ def code_project(project_name: str, planning: str, code: List[Dict[str, str]]):
     # Validate that code is actually provided
     if not code or len(code) == 0:
         return {"status": "error", "message": "FAILED: 'code' parameter is required and cannot be empty. You must provide actual file contents."}
-    
-    for file in code:
-        if not file.get("content") or len(file["content"].strip()) < 10:
-            return {"status": "error", "message": f"FAILED: File {file.get('name', 'unknown')} has no content. Provide actual working code."}
-        if file.get("type", "new") == "new" and ("TODO" in file["content"] or "placeholder" in file["content"].lower()):
-            return {"status": "error", "message": f"FAILED: File {file['name']} contains placeholder text. Provide complete working code only."}
 
     try:
         # Helper predicates for allow/exclude
