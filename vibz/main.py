@@ -51,7 +51,7 @@ def get_diff() -> str:
         return f"Error getting diff: {e}"
 
 @mcp.prompt()
-def diff_prompt():
+def prompt():
     return template_description + f"\n\nDiff: {get_diff()}"
 
 @mcp.tool(description="""
