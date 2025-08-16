@@ -4,7 +4,7 @@
 
 - **Template Structure**: Project uses existing template with Convex + TanStack Router + shadcn/ui. Never overwrite these files unless specified by the user.
 - **Existing Components**: Reuse existing UI components from `src/components/ui/` instead of creating new ones
-- **Project Structure**: Work within existing `src/` directory structure
+- **Project Structure**: Work within existing `src/` or `convex/` directory structure
 - **Package Management**: Don't recreate package.json - it already exists in template
 - **File Conflicts**: Check existing files before creating new ones
 - **Component Naming**: Use kebab-case for file names (e.g., `todo-item.tsx`)
@@ -19,7 +19,7 @@
 - Git initialized in data directory
 - Development server runs on bun dev
 - TypeScript linting enabled
-- Existing project structure in `src/` with components, routes, hooks, lib
+- Existing project structure in `src/` with components, routes, hooks, lib with the backend defined in `convex/` folder with schema and auth configured.
 
 ## Template Structure
 
