@@ -65,8 +65,8 @@ Args:
     code: {'name': str, 'content': str, 'type': 'new' | 'edit'}[] : List of code files.
 
 FILE TYPES:
-- type: 'new' = Full file content (creates or overwrites)
-- type: 'edit' = GNU unified diff patch (modifies existing file)
+- type: 'new' = Full file content (creates or overwrites). Use for: new files, substantial changes (>10 lines), replacing empty structures with complex ones, complete rewrites
+- type: 'edit' = GNU unified diff patch (modifies existing file). Use for: small targeted changes (<10 lines), fixing specific bugs, adding single functions
 
 EDIT TYPE DIFF FORMAT:
 --- a/src/components/example.tsx
@@ -141,10 +141,23 @@ def code_project(project_name: str, planning: str, code: List[Dict[str, str]]):
                 os.remove(patch_file)
                 
                 if result.returncode != 0:
-                    return {
-                        "status": "error", 
-                        "message": f"Failed to apply diff to {relative_path}: {result.stderr}"
-                    }
+                    # Auto-retry: diff failed, try to reconstruct and overwrite the full file
+                    try:
+                        # Read the current file
+                        with open(full_path, "r", encoding="utf-8") as f:
+                            current_content = f.read()
+                        
+                        # Try to apply the patch manually to reconstruct the intended result
+                        # For now, we'll suggest the user switch to 'new' type
+                        return {
+                            "status": "error", 
+                            "message": f"Diff failed for {relative_path}: {result.stderr}. Auto-retry not implemented yet. Use type: 'new' with complete file content instead."
+                        }
+                    except Exception as e:
+                        return {
+                            "status": "error", 
+                            "message": f"Failed to apply diff to {relative_path} and auto-retry failed: {str(e)}"
+                        }
                 files_processed.append(f"{relative_path} (edited)")
             else:
                 # Create/overwrite full file

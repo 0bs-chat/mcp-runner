@@ -6,7 +6,7 @@
 - **Existing Components**: Reuse existing UI components from `src/components/ui/` instead of creating new ones
 - **Project Structure**: Work within existing `src/` or `convex/` directory structure
 - **Package Management**: Don't recreate package.json - it already exists in template
-- **File Conflicts**: Check existing files before creating new ones
+- **File Operations**: Always read existing files before editing them if you do not have it in your memory. Diffs are automatically made avilable to you so do not think/worry about this; use full file replacement (type: 'new') when diffs fail or for substantial changes
 - **Component Naming**: Use kebab-case for file names (e.g., `todo-item.tsx`)
 - **TypeScript**: All files must be production-ready with proper types
 - **No Placeholders**: Complete, functional code only - no explanatory comments or mocks
@@ -677,6 +677,29 @@ function SearchFilters() {
 
 - Always define your schema in `convex/schema.ts`.
 - Always import the schema definition functions from `convex/server`:
+- **Use defineTable() for all tables**: Never use plain object syntax for table definitions. Example:
+  ```typescript
+  // CORRECT - Use defineTable()
+  export default defineSchema({
+    ...authTables,
+    channels: defineTable({
+      name: v.string(),
+      createdBy: v.id("users"),
+    }).index("by_name", ["name"]),
+    messages: defineTable({
+      channelId: v.id("channels"),
+      authorId: v.id("users"),
+      body: v.string(),
+      createdAt: v.number(),
+    }).index("by_channelId", ["channelId"])
+      .searchIndex("search_body", { searchField: "body" }),
+  });
+  
+  // WRONG - Never use plain objects
+  const tables = {
+    channels: { name: v.string() } // This will cause errors
+  };
+  ```
 - System fields are automatically added to all documents and are prefixed with an underscore. The two system fields that are automatically added to all documents are `_creationTime` which has the validator `v.number()` and `_id` which has the validator `v.id(tableName)`.
 - Always include all index fields in the index name. For example, if an index is defined as `["field1", "field2"]`, the index name should be "by_field1_and_field2".
 - Index fields must be queried in the same order they are defined. If you want to be able to query by "field1" then "field2" and by "field2" then "field1", you must create separate indexes.
