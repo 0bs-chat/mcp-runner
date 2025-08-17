@@ -24,7 +24,8 @@ function checkConvexDeployKey(): boolean {
 }
 
 function startServer() {
-  const codeServerProcess = exec(`code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
+  const OAUTH_TOKEN = process.env.OAUTH_TOKEN;
+  const codeServerProcess = exec(`PASSWORD=${OAUTH_TOKEN} code-server --auth ${OAUTH_TOKEN ? `none` : `password`} --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
   codeServerProcess.stdout?.pipe(process.stdout, { end: false });
   codeServerProcess.stderr?.pipe(process.stderr, { end: false });
 

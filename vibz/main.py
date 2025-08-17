@@ -6,7 +6,6 @@ from typing import List, Dict, Set
 from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse, HTMLResponse
-from starlette.websockets import WebSocket, WebSocketDisconnect
 from starlette.middleware.base import BaseHTTPMiddleware
 
 class TokenAuthMiddleware(BaseHTTPMiddleware):
@@ -259,10 +258,6 @@ def read_file(file_path: str):
 async def health_check(request: Request):
     return JSONResponse({"status": "ok"})
 
-@mcp.custom_route("/auth-validate", methods=["GET", "POST"])
-async def auth_validate(request: Request):
-    return JSONResponse({"status": "ok"}, status_code=200)
-
 @mcp.custom_route("/dashboard", methods=["GET"])
 async def dashboard(request: Request):
     """Serve embedded Convex dashboard"""
@@ -370,16 +365,6 @@ async def dashboard(request: Request):
     """
     
     return HTMLResponse(html_content)
-
-@mcp.websocket_route("/ws")
-async def websocket(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Message text was: {data}")
-    except WebSocketDisconnect:
-        print("Client disconnected")
 
 if __name__ == "__main__":
     print("Starting vibz MCP server...")
