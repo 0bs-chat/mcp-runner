@@ -375,6 +375,7 @@ async def dashboard(request: Request):
 
 if __name__ == "__main__":
     print("Starting vibz MCP server...")
-    app = mcp.http_app(path="/sse", transport="sse", middleware=[TokenAuthMiddleware])
+    app = mcp.http_app(transport="http")
+    app.add_middleware(TokenAuthMiddleware)
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
