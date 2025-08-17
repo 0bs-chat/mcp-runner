@@ -16,7 +16,7 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
         self.oauth_token = os.getenv('OAUTH_TOKEN')
 
     async def dispatch(self, request: Request, call_next):
-        allowed_paths = ["/healthz"]
+        allowed_paths = ["/healthz", "/sse", "/sse/"]
         if request.url.path in allowed_paths:
             return await call_next(request)
 
@@ -47,7 +47,7 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
         # Token is valid, proceed with request
         return await call_next(request)
 
-mcp = FastMCP("vibz", host="0.0.0.0", port=8000)
+mcp = FastMCP("vibz")
 
 # Base directories - inferred from environment variables
 BASE_DIR = os.getenv("BASE_DIR", "./data")
