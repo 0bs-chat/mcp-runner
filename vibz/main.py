@@ -1,11 +1,14 @@
 import os
 import subprocess
 import git
+import base64
+import json
+import httpx
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Optional
 from fastmcp import FastMCP
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, HTMLResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 class TokenAuthMiddleware(BaseHTTPMiddleware):
@@ -57,6 +60,36 @@ TEMPLATE_DIR = os.getenv("TEMPLATE_DIR", "templates/convex-tanstackrouter-shadcn
 template_description = Path(f"{TEMPLATE_DIR}/desc.md").read_text()
 
 lint_errors: Set[str] = set()
+
+def parse_convex_deploy_key(deploy_key: str) -> Optional[Dict[str, str]]:
+    """Parse CONVEX_DEPLOY_KEY to extract deployment details"""
+    try:
+        # Deploy key format: "dev:deployment-name|base64_encoded_data"
+        if '|' not in deploy_key:
+            return None
+        
+        deployment_name, encoded_data = deploy_key.split('|', 1)
+        
+        # Decode the base64 data to get deployment URL info
+        decoded_data = base64.b64decode(encoded_data).decode('utf-8')
+        deployment_info = json.loads(decoded_data)
+        
+        return {
+            'deploymentName': deployment_name,
+            'deploymentUrl': f"https://{deployment_info.get('v2', '')}.convex.cloud",
+            'adminKey': deploy_key
+        }
+    except Exception as e:
+        print(f"Error parsing deploy key: {e}")
+        return None
+
+async def get_deployment_details() -> Optional[Dict[str, str]]:
+    """Get deployment details from CONVEX_DEPLOY_KEY"""
+    deploy_key = os.getenv('CONVEX_DEPLOY_KEY')
+    if not deploy_key:
+        return None
+    
+    return parse_convex_deploy_key(deploy_key)
 
 def git_commit_response(project_name: str) -> bool:
     try:
@@ -257,6 +290,117 @@ def read_file(file_path: str):
 @mcp.custom_route("/healthz", methods=["GET"])
 async def health_check(request: Request):
     return JSONResponse({"status": "ok"})
+
+@mcp.custom_route("/auth-validate", methods=["GET", "POST"])
+async def auth_validate(request: Request):
+    return JSONResponse({"status": "ok"}, status_code=200)
+
+@mcp.custom_route("/dashboard", methods=["GET"])
+async def dashboard(request: Request):
+    """Serve embedded Convex dashboard"""
+    deployment_details = await get_deployment_details()
+    
+    if not deployment_details:
+        return HTMLResponse(
+            "<html><body><h1>Dashboard Unavailable</h1><p>No Convex deployment key found.</p></body></html>",
+            status_code=503
+        )
+    
+    # Create the embedded dashboard HTML based on Convex documentation
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Convex Dashboard</title>
+        <style>
+            body {{
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                background-color: #f5f5f5;
+            }}
+            .dashboard-container {{
+                width: 100vw;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }}
+            .dashboard-header {{
+                background: #1a1a1a;
+                color: white;
+                padding: 1rem;
+                text-align: center;
+            }}
+            .dashboard-frame {{
+                flex: 1;
+                border: none;
+                background: white;
+            }}
+            .loading {{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 200px;
+                color: #666;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1>Convex Dashboard - {deployment_details['deploymentName']}</h1>
+            </div>
+            <div class="loading" id="loading">Loading dashboard...</div>
+            <iframe
+                id="dashboard-frame"
+                class="dashboard-frame"
+                src="https://dashboard-embedded.convex.dev/data"
+                allow="clipboard-write"
+                style="display: none;"
+            ></iframe>
+        </div>
+        
+        <script>
+            const iframe = document.getElementById('dashboard-frame');
+            const loading = document.getElementById('loading');
+            
+            function showDashboard() {{
+                loading.style.display = 'none';
+                iframe.style.display = 'block';
+            }}
+            
+            function handleMessage(event) {{
+                // Wait for the iframe to send a dashboard-credentials-request message
+                if (event.data?.type !== "dashboard-credentials-request") {{
+                    return;
+                }}
+                
+                iframe.contentWindow?.postMessage(
+                    {{
+                        type: "dashboard-credentials",
+                        adminKey: "{deployment_details['adminKey']}",
+                        deploymentUrl: "{deployment_details['deploymentUrl']}",
+                        deploymentName: "{deployment_details['deploymentName']}"
+                    }},
+                    "*"
+                );
+                
+                // Show the dashboard after a short delay to avoid flashing
+                setTimeout(showDashboard, 1000);
+            }}
+            
+            window.addEventListener("message", handleMessage);
+            
+            // Fallback: show dashboard after 3 seconds even if no message received
+            setTimeout(showDashboard, 3000);
+        </script>
+    </body>
+    </html>
+    """
+    
+    return HTMLResponse(html_content)
 
 if __name__ == "__main__":
     print("Starting vibz MCP server...")
