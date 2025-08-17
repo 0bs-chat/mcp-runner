@@ -320,9 +320,6 @@ async def dashboard(request: Request):
     </head>
     <body>
         <div class="dashboard-container">
-            <div class="dashboard-header">
-                <h1>Convex Dashboard - {deployment_details['deploymentName']}</h1>
-            </div>
             <div class="loading" id="loading">Loading dashboard...</div>
             <iframe
                 id="dashboard-frame"
