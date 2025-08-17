@@ -85,7 +85,7 @@ ENV TEMPLATE_DIR=/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn
 RUN git config --global user.email "vibz@0bs.chat" && \
   git config --global user.name "VibzBot"
 
-RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
+RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && sleep 1 && \
   cd /mcp-runner/vibz && \
   . $NVM_DIR/nvm.sh && \
   nvm use default && \
@@ -102,5 +102,5 @@ RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
 
 WORKDIR /mcp-runner/vibz
 CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bun run start.ts'
-# sudo docker build --no-cache -t mantrakp04/vibz:v2 -f services/mcps/vibz/Dockerfile . --push
+# sudo docker build -t mantrakp04/vibz:v2 -f services/mcps/vibz/Dockerfile . --push
 # sudo docker run -it -p 80:80 -e CONVEX_DEPLOY_KEY=$CONVEX_DEPLOY_KEY mantrakp04/vibz:v2
