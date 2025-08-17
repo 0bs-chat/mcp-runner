@@ -8,7 +8,6 @@ from fastmcp.utilities.types import Image
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware import Middleware
 import os
 
 class TokenAuthMiddleware(BaseHTTPMiddleware):

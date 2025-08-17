@@ -1,11 +1,8 @@
 import os
 import subprocess
 import git
-import base64
-import json
-import httpx
 from pathlib import Path
-from typing import List, Dict, Set, Optional
+from typing import List, Dict, Set
 from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse, HTMLResponse
