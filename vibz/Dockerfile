@@ -45,6 +45,7 @@ RUN apt-get update && \
     unzip \
     screen \
     nginx \
+    gettext \
     && \
   rm -rf /var/lib/apt/lists/*
 
@@ -85,14 +86,12 @@ ENV TEMPLATE_DIR=/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn
 RUN git config --global user.email "vibz@0bs.chat" && \
   git config --global user.name "VibzBot"
 
-RUN cd / && sleep 3 && git clone https://github.com/0bs-chat/mcp-runner.git && \
+RUN cd / && git clone https://github.com/0bs-chat/mcp-runner.git && \
   cd /mcp-runner/vibz && \
   . $NVM_DIR/nvm.sh && \
   nvm use default && \
   uv sync && \
   curl -fsSL https://code-server.dev/install.sh | sh && \
-  cp -r /mcp-runner/vibz/nginx.conf /etc/nginx/nginx.conf && \
-  nginx -t && \
   bun i && \
   cp -r "$TEMPLATE_DIR/." "$BASE_DIR" && \
   cd "$BASE_DIR" && \

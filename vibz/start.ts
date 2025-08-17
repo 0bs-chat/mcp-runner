@@ -24,8 +24,7 @@ function checkConvexDeployKey(): boolean {
 }
 
 function startServer() {
-  const OAUTH_TOKEN = process.env.OAUTH_TOKEN;
-  const codeServerProcess = exec(`PASSWORD=${OAUTH_TOKEN} code-server --auth ${OAUTH_TOKEN ? `password` : `none`} --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
+  const codeServerProcess = exec(`code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
   codeServerProcess.stdout?.pipe(process.stdout, { end: false });
   codeServerProcess.stderr?.pipe(process.stderr, { end: false });
 
@@ -53,7 +52,10 @@ async function main() {
   mcpServerProcess.stdout?.pipe(process.stdout, { end: false });
   mcpServerProcess.stderr?.pipe(process.stderr, { end: false });
   
-  const nginxProcess = exec(`nginx -g "daemon off;"`, { cwd: "/mcp-runner/vibz" });
+  const nginxProcess = exec(`envsubst '$OAUTH_TOKEN' < nginx.conf.template > /etc/nginx/nginx.conf && nginx -g "daemon off;"`, { 
+    cwd: "/mcp-runner/vibz",
+    env: { ...process.env }
+  });
   nginxProcess.stdout?.pipe(process.stdout, { end: false });
   nginxProcess.stderr?.pipe(process.stderr, { end: false });
 
