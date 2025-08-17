@@ -49,14 +49,17 @@ bash start.sh
 The server provides two main tools:
 
 #### `code_project`
+
 Creates a complete code project with multiple files.
 
 **Parameters:**
+
 - `project_name` (str): Descriptive name for the project (e.g., 'Stopwatch', 'Email Form', 'Dashboard')
 - `planning` (str): Brief planning statement outlining project structure and approach
 - `code` (List[Dict]): List of code files with `name` (kebab-case filename) and `content` (complete file content)
 
 **Example:**
+
 ```python
 {
     "project_name": "Todo App",
@@ -71,12 +74,15 @@ Creates a complete code project with multiple files.
 ```
 
 #### `install_packages`
+
 Installs additional packages using bun.
 
 **Parameters:**
+
 - `packages` (List[str]): List of package names to install
 
 **Example:**
+
 ```python
 {
     "packages": ["@radix-ui/react-dialog", "lucide-react"]
@@ -110,6 +116,7 @@ The template creates a full-stack application with this structure:
 ### Running the Development Server
 
 The MCP automatically starts a development server that runs on `http://localhost:3000` with:
+
 - Hot reload for React components
 - Convex backend with real-time sync
 - TypeScript compilation
@@ -132,6 +139,7 @@ The MCP automatically starts a development server that runs on `http://localhost
 ### Template Customization
 
 The template is located in `templates/convex-tanstackrouter-shadcn/` and includes:
+
 - Pre-configured Convex backend
 - Complete shadcn/ui component library
 - TanStack Router setup

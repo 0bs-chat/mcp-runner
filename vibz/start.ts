@@ -10,21 +10,24 @@ if (!CONVEX_DEPLOY_KEY) {
 
 function checkConvexDeployKey(): boolean {
   const envPath = `${process.env.BASE_DIR}/.env.local`;
-  
+
   if (!existsSync(envPath)) {
     return false;
   }
-  
+
   try {
-    const envContent = readFileSync(envPath, 'utf-8');
-    return envContent.includes('CONVEX_DEPLOY_KEY=');
+    const envContent = readFileSync(envPath, "utf-8");
+    return envContent.includes("CONVEX_DEPLOY_KEY=");
   } catch (error) {
     return false;
   }
 }
 
 function startServer() {
-  const codeServerProcess = exec(`code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
+  const codeServerProcess = exec(
+    `code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`,
+    { cwd: "/mcp-runner/vibz" },
+  );
   codeServerProcess.stdout?.pipe(process.stdout, { end: false });
   codeServerProcess.stderr?.pipe(process.stderr, { end: false });
 
@@ -34,8 +37,8 @@ function startServer() {
 
   return {
     codeServerProcess,
-    devServerProcess
-  }
+    devServerProcess,
+  };
 }
 
 const excludedFiles = [
@@ -43,7 +46,7 @@ const excludedFiles = [
   "convex/http.ts",
   "convex/auth.ts",
   "src/routes/index.tsx",
-  "package.json"
+  "package.json",
 ];
 
 async function main() {
@@ -51,11 +54,14 @@ async function main() {
   const mcpServerProcess = exec(`uv run main.py`, { cwd: "/mcp-runner/vibz" });
   mcpServerProcess.stdout?.pipe(process.stdout, { end: false });
   mcpServerProcess.stderr?.pipe(process.stderr, { end: false });
-  
-  const nginxProcess = exec(`envsubst '$OAUTH_TOKEN' < nginx.conf.template > /etc/nginx/nginx.conf && nginx -g "daemon off;"`, { 
-    cwd: "/mcp-runner/vibz",
-    env: { ...process.env }
-  });
+
+  const nginxProcess = exec(
+    `envsubst '$OAUTH_TOKEN' < nginx.conf.template > /etc/nginx/nginx.conf && nginx -g "daemon off;"`,
+    {
+      cwd: "/mcp-runner/vibz",
+      env: { ...process.env },
+    },
+  );
   nginxProcess.stdout?.pipe(process.stdout, { end: false });
   nginxProcess.stderr?.pipe(process.stderr, { end: false });
 
@@ -65,7 +71,9 @@ async function main() {
     startServer();
     return;
   }
-  console.log("CONVEX_DEPLOY_KEY not found in environment or .env.local, executing steps 2-6");
+  console.log(
+    "CONVEX_DEPLOY_KEY not found in environment or .env.local, executing steps 2-6",
+  );
 
   // 2. Write CONVEX_DEPLOY_KEY to .env.local
   const envPath = `${process.env.BASE_DIR}/.env.local`;
@@ -73,7 +81,10 @@ async function main() {
   writeFileSync(envPath, envLine);
 
   // 3. Set environment variables for auth
-  execSync("bunx convex env set SITE_URL http://localhost:3000", { stdio: "inherit", cwd: process.env.BASE_DIR });
+  execSync("bunx convex env set SITE_URL http://localhost:3000", {
+    stdio: "inherit",
+    cwd: process.env.BASE_DIR,
+  });
 
   const keys = await generateKeyPair("RS256", {
     extractable: true,
@@ -81,21 +92,30 @@ async function main() {
   const privateKey = await exportPKCS8(keys.privateKey);
   const publicKey = await exportJWK(keys.publicKey);
   const jwks = JSON.stringify({ keys: [{ use: "sig", ...publicKey }] });
-  
-  execSync(`bunx convex env set JWT_PRIVATE_KEY='${privateKey.trimEnd().replace(/\n/g, " ")}'`, { 
-    stdio: "inherit", 
-    cwd: process.env.BASE_DIR 
-  });
-  execSync(`bunx convex env set JWKS='${jwks}'`, { 
-    stdio: "inherit", 
-    cwd: process.env.BASE_DIR 
+
+  execSync(
+    `bunx convex env set JWT_PRIVATE_KEY='${privateKey.trimEnd().replace(/\n/g, " ")}'`,
+    {
+      stdio: "inherit",
+      cwd: process.env.BASE_DIR,
+    },
+  );
+  execSync(`bunx convex env set JWKS='${jwks}'`, {
+    stdio: "inherit",
+    cwd: process.env.BASE_DIR,
   });
 
   // 4. Commit git changes
-  execSync(`git add . ${excludedFiles.map(file => `:!${file}`).join(" ")}`, { stdio: "inherit", cwd: process.env.BASE_DIR });
-  execSync(`git commit -m "Initial commit"`, { stdio: "inherit", cwd: process.env.BASE_DIR });
+  execSync(`git add . ${excludedFiles.map((file) => `:!${file}`).join(" ")}`, {
+    stdio: "inherit",
+    cwd: process.env.BASE_DIR,
+  });
+  execSync(`git commit -m "Initial commit"`, {
+    stdio: "inherit",
+    cwd: process.env.BASE_DIR,
+  });
   execSync(`git add .`, { stdio: "inherit", cwd: process.env.BASE_DIR });
-  
+
   // 5. Start code server in parallel and then start the dev server
   startServer();
 }
