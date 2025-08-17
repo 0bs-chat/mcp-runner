@@ -24,26 +24,16 @@ function checkConvexDeployKey(): boolean {
 }
 
 function startServer() {
-  const mcpServerProcess = exec(`uv run main.py`, { cwd: "/mcp-runner/vibz" });
-  mcpServerProcess.stdout?.pipe(process.stdout, { end: false });
-  mcpServerProcess.stderr?.pipe(process.stderr, { end: false });
-
   const codeServerProcess = exec(`code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
   codeServerProcess.stdout?.pipe(process.stdout, { end: false });
   codeServerProcess.stderr?.pipe(process.stderr, { end: false });
 
-  const nginxProcess = exec(`nginx -g "daemon off;"`, { cwd: "/mcp-runner/vibz" });
-  nginxProcess.stdout?.pipe(process.stdout, { end: false });
-  nginxProcess.stderr?.pipe(process.stderr, { end: false });
-  
   const devServerProcess = exec(`bun dev`, { cwd: process.env.BASE_DIR });
   devServerProcess.stdout?.pipe(process.stdout, { end: false });
   devServerProcess.stderr?.pipe(process.stderr, { end: false });
 
   return {
     codeServerProcess,
-    mcpServerProcess,
-    nginxProcess,
     devServerProcess
   }
 }
@@ -57,6 +47,15 @@ const excludedFiles = [
 ];
 
 async function main() {
+  // 0. Start MCP server and nginx
+  const mcpServerProcess = exec(`uv run main.py`, { cwd: "/mcp-runner/vibz" });
+  mcpServerProcess.stdout?.pipe(process.stdout, { end: false });
+  mcpServerProcess.stderr?.pipe(process.stderr, { end: false });
+  
+  const nginxProcess = exec(`nginx -g "daemon off;"`, { cwd: "/mcp-runner/vibz" });
+  nginxProcess.stdout?.pipe(process.stdout, { end: false });
+  nginxProcess.stderr?.pipe(process.stderr, { end: false });
+
   // 1. Check if CONVEX_DEPLOY_KEY is set
   const hasConvexDeployKey = checkConvexDeployKey();
   if (hasConvexDeployKey) {
