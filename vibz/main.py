@@ -3,8 +3,49 @@ import subprocess
 import git
 from pathlib import Path
 from typing import List, Dict, Set
-from mcp.server.fastmcp import FastMCP
-from git import Repo
+from fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class TokenAuthMiddleware(BaseHTTPMiddleware):
+    """Middleware to verify Bearer token authorization"""
+    
+    def __init__(self, app):
+        super().__init__(app)
+        self.oauth_token = os.getenv('OAUTH_TOKEN')
+
+    async def dispatch(self, request: Request, call_next):
+        allowed_paths = ["/healthz"]
+        if request.url.path in allowed_paths:
+            return await call_next(request)
+
+        if self.oauth_token:
+          # Check for Authorization header
+          auth_header = request.headers.get("Authorization")
+          if not auth_header:
+              return JSONResponse(
+                  {"error": "Authorization header required"}, 
+                  status_code=401
+              )
+          
+          # Verify Bearer token format
+          if not auth_header.startswith("Bearer "):
+              return JSONResponse(
+                  {"error": "Invalid authorization format. Expected 'Bearer <token>'"}, 
+                  status_code=401
+              )
+          
+          # Extract and verify token
+          token = auth_header[7:]  # Remove "Bearer " prefix
+          if token != self.oauth_token:
+              return JSONResponse(
+                  {"error": "Invalid token"}, 
+                  status_code=401
+              )
+          
+        # Token is valid, proceed with request
+        return await call_next(request)
 
 mcp = FastMCP("vibz", host="0.0.0.0", port=8000)
 
@@ -213,6 +254,13 @@ def read_file(file_path: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@mcp.custom_route("/healthz", methods=["GET"])
+async def health_check(request: Request):
+    return JSONResponse({"status": "ok"})
+
 if __name__ == "__main__":
     print("Starting vibz MCP server...")
-    mcp.run(transport="streamable-http")
+    app = mcp.http_app(transport="sse")
+    app.add_middleware(TokenAuthMiddleware)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

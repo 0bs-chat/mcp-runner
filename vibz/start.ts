@@ -24,13 +24,13 @@ function checkConvexDeployKey(): boolean {
 }
 
 function startServer() {
-  const codeServerProcess = exec(`code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
-  codeServerProcess.stdout?.pipe(process.stdout, { end: false });
-  codeServerProcess.stderr?.pipe(process.stderr, { end: false });
-
   const mcpServerProcess = exec(`uv run main.py`, { cwd: "/mcp-runner/vibz" });
   mcpServerProcess.stdout?.pipe(process.stdout, { end: false });
   mcpServerProcess.stderr?.pipe(process.stderr, { end: false });
+
+  const codeServerProcess = exec(`code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`, { cwd: "/mcp-runner/vibz" });
+  codeServerProcess.stdout?.pipe(process.stdout, { end: false });
+  codeServerProcess.stderr?.pipe(process.stderr, { end: false });
 
   const nginxProcess = exec(`nginx -g "daemon off;"`, { cwd: "/mcp-runner/vibz" });
   nginxProcess.stdout?.pipe(process.stdout, { end: false });

@@ -1,19 +1,59 @@
 import mimetypes
 from typing import Dict, List
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from autogen_core import CancellationToken
 from autogen_core.code_executor import CodeBlock
 from autogen_ext.code_executors.jupyter import JupyterCodeExecutor
 from mcp.server.fastmcp.utilities.types import Image
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware import Middleware
 import os
 
-mcp = FastMCP("Demo", host="0.0.0.0", port=8000)
-os.makedirs("./data", exist_ok=True)
-# In-memory map of session_id → JupyterCodeExecutor
-executors: Dict[str, JupyterCodeExecutor] = {}
+class TokenAuthMiddleware(BaseHTTPMiddleware):
+    """Middleware to verify Bearer token authorization"""
+    
+    def __init__(self, app):
+        super().__init__(app)
+        self.oauth_token = os.getenv('OAUTH_TOKEN')
 
+    async def dispatch(self, request: Request, call_next):
+        allowed_paths = ["/healthz"]
+        if request.url.path in allowed_paths:
+            return await call_next(request)
+
+        if self.oauth_token:
+          # Check for Authorization header
+          auth_header = request.headers.get("Authorization")
+          if not auth_header:
+              return JSONResponse(
+                  {"error": "Authorization header required"}, 
+                  status_code=401
+              )
+          
+          # Verify Bearer token format
+          if not auth_header.startswith("Bearer "):
+              return JSONResponse(
+                  {"error": "Invalid authorization format. Expected 'Bearer <token>'"}, 
+                  status_code=401
+              )
+          
+          # Extract and verify token
+          token = auth_header[7:]  # Remove "Bearer " prefix
+          if token != self.oauth_token:
+              return JSONResponse(
+                  {"error": "Invalid token"}, 
+                  status_code=401
+              )
+          
+        # Token is valid, proceed with request
+        return await call_next(request)
+
+mcp = FastMCP("Demo")
+
+os.makedirs("./data", exist_ok=True)
+executors: Dict[str, JupyterCodeExecutor] = {}
 
 async def get_executor(session_id: str) -> JupyterCodeExecutor:
   """
@@ -24,7 +64,6 @@ async def get_executor(session_id: str) -> JupyterCodeExecutor:
       await executor.start()
       executors[session_id] = executor
   return executors[session_id]
-
 
 @mcp.tool()
 async def execute_code(code: str, session_id: str):
@@ -96,5 +135,12 @@ async def serve_data_file(request: Request):
         return JSONResponse({"error": "File not found"}, status_code=404)
     return FileResponse(file_path)
 
+@mcp.custom_route("/healthz", methods=["GET"])
+async def health_check(request: Request):
+    return JSONResponse({"status": "ok"})
+
 if __name__ == "__main__":
-  mcp.run(transport="sse")
+  app = mcp.http_app(transport="sse")
+  app.add_middleware(TokenAuthMiddleware)
+  import uvicorn
+  uvicorn.run(app, host="0.0.0.0", port=8000)

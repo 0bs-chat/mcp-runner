@@ -8,6 +8,7 @@ dependencies = [
     "autogen-agentchat",
     "autogen-ext[jupyter-executor]",
     "fastmcp",
+    "uvicorn",
     "matplotlib>=3.10.3",
     "numpy>=2.3.1",
     "seaborn",
