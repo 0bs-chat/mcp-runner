@@ -7,6 +7,7 @@ from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse, HTMLResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+import mimetypes
 
 class TokenAuthMiddleware(BaseHTTPMiddleware):
     """Middleware to verify Bearer token authorization"""
@@ -58,11 +59,10 @@ template_description = Path(f"{TEMPLATE_DIR}/desc.md").read_text()
 
 lint_errors: Set[str] = set()
 
-def git_commit_response(project_name: str) -> bool:
+def git_stage_response() -> bool:
     try:
         repo = git.Repo(BASE_DIR)
         repo.git.add(".")
-        repo.index.commit(f"feat: {project_name} - Generated code response")
         return True
     except Exception as e:
         print(f"Error committing to git: {e}")
@@ -79,6 +79,7 @@ def run_lint() -> str:
 
 def get_diff() -> str:
     try:
+        subprocess.run(["git", "commit", "-m", "feat: Generated code response"], cwd=BASE_DIR)
         subprocess.run(["git", "add", "."], cwd=BASE_DIR)
         result = subprocess.run(
             ["git", "diff", "--staged"],
@@ -208,7 +209,7 @@ def code_project(project_name: str, planning: str, code: List[Dict[str, str]]):
                     f.write(file["content"])
                 files_processed.append(f"{relative_path} (created)")
 
-        git_commit_response(project_name)
+        git_stage_response()
         lint_output = run_lint()
         
         return {
@@ -237,22 +238,40 @@ Read existing file contents to understand current code before making edits.
 Args:
     file_path: str : Relative path to file to read
 """)
-def read_file(file_path: str):
-    try:
-        full_path = os.path.join(BASE_DIR, file_path)
-        if not os.path.exists(full_path):
-            return {"status": "error", "message": f"File does not exist: {file_path}"}
-        
-        with open(full_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        
-        return {
-            "status": "success",
-            "file_path": file_path,
-            "content": content
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+def read_files(file_paths: List[str]):
+    results = []
+    for file_path in file_paths:
+        try:
+            full_path = os.path.join(BASE_DIR, file_path)
+            if not os.path.exists(full_path):
+                results.append({
+                    "file_path": file_path,
+                    "message": f"File does not exist: {file_path}"
+                })
+                continue
+
+            mime_type, _ = mimetypes.guess_type(full_path)
+            if not mime_type or not mime_type.startswith("text/"):
+                results.append({
+                    "file_path": file_path,
+                    "message": f"File is not a text file (detected mime type: {mime_type})"
+                })
+                continue
+
+            with open(full_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            results.append({
+                "file_path": file_path,
+                "content": content
+            })
+        except Exception as e:
+            results.append({
+                "status": "error",
+                "file_path": file_path,
+                "message": str(e)
+            })
+    return results
 
 @mcp.custom_route("/healthz", methods=["GET"])
 async def health_check(request: Request):
