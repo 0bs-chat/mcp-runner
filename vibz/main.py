@@ -61,36 +61,6 @@ template_description = Path(f"{TEMPLATE_DIR}/desc.md").read_text()
 
 lint_errors: Set[str] = set()
 
-def parse_convex_deploy_key(deploy_key: str) -> Optional[Dict[str, str]]:
-    """Parse CONVEX_DEPLOY_KEY to extract deployment details"""
-    try:
-        # Deploy key format: "dev:deployment-name|base64_encoded_data"
-        if '|' not in deploy_key:
-            return None
-        
-        deployment_name, encoded_data = deploy_key.split('|', 1)
-        
-        # Decode the base64 data to get deployment URL info
-        decoded_data = base64.b64decode(encoded_data).decode('utf-8')
-        deployment_info = json.loads(decoded_data)
-        
-        return {
-            'deploymentName': deployment_name,
-            'deploymentUrl': f"https://{deployment_info.get('v2', '')}.convex.cloud",
-            'adminKey': deploy_key
-        }
-    except Exception as e:
-        print(f"Error parsing deploy key: {e}")
-        return None
-
-async def get_deployment_details() -> Optional[Dict[str, str]]:
-    """Get deployment details from CONVEX_DEPLOY_KEY"""
-    deploy_key = os.getenv('CONVEX_DEPLOY_KEY')
-    if not deploy_key:
-        return None
-    
-    return parse_convex_deploy_key(deploy_key)
-
 def git_commit_response(project_name: str) -> bool:
     try:
         repo = git.Repo(BASE_DIR)
@@ -298,7 +268,11 @@ async def auth_validate(request: Request):
 @mcp.custom_route("/dashboard", methods=["GET"])
 async def dashboard(request: Request):
     """Serve embedded Convex dashboard"""
-    deployment_details = await get_deployment_details()
+    deployment_details = {
+        "deploymentName": os.getenv('CONVEX_DEPLOYMENT_NAME'),
+        "deploymentUrl": os.getenv('CONVEX_DEPLOYMENT_URL'),
+        "adminKey": os.getenv('CONVEX_DEPLOY_KEY')
+    }
     
     if not deployment_details:
         return HTMLResponse(

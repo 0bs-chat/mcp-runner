@@ -4,7 +4,7 @@ from fastmcp import FastMCP
 from autogen_core import CancellationToken
 from autogen_core.code_executor import CodeBlock
 from autogen_ext.code_executors.jupyter import JupyterCodeExecutor
-from mcp.server.fastmcp.utilities.types import Image
+from fastmcp.utilities.types import Image
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
