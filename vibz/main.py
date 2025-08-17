@@ -16,7 +16,7 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
         self.oauth_token = os.getenv('OAUTH_TOKEN')
 
     async def dispatch(self, request: Request, call_next):
-        allowed_paths = ["/healthz", "/sse", "/sse/"]
+        allowed_paths = ["/healthz"]
         if request.url.path in allowed_paths:
             return await call_next(request)
 
@@ -375,7 +375,6 @@ async def dashboard(request: Request):
 
 if __name__ == "__main__":
     print("Starting vibz MCP server...")
-    app = mcp.http_app(transport="sse")
-    app.add_middleware(TokenAuthMiddleware)
+    app = mcp.http_app(path="/sse", transport="sse", middleware=[TokenAuthMiddleware])
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
