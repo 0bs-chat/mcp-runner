@@ -236,7 +236,7 @@ def install_packages(packages: List[str]):
 Read existing file contents to understand current code before making edits.
 
 Args:
-    file_path: str : Relative path to file to read
+    file_paths: str[] : Relative paths to files to read
 """)
 def read_files(file_paths: List[str]):
     results = []
