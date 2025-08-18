@@ -83,5 +83,5 @@ ENV OAUTH_TOKEN="sheesh"
 EXPOSE 8000
 CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bun run ./supergateway/dist/index.js --stdio '${MCP_COMMAND}' --auth $OAUTH_TOKEN --base-url http://0.0.0.0:8000 --healthEndpoint /healthz"]
 
-# cd services/mcps/ && sudo docker build -t mantrakp04/mcprunner:v2 -f Dockerfile . --push
-# sudo docker run -it -e MCP_COMMAND="bunx github-repo-mcp" -p 8000:8000 mantrakp04/mcprunner:v2
+# cd services/mcps/ && docker build -t registry.fly.io/floral-brook-444:v1 -f Dockerfile . --push
+# sudo docker run -it -e MCP_COMMAND="bunx github-repo-mcp" -p 8000:8000 registry.fly.io/floral-brook-444:v1
