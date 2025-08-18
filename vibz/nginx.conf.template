@@ -47,19 +47,19 @@ http {
             proxy_pass http://mcp_server/mcp/;
         }
 
-        location = /dashboard {
+        location = /dashboard/${MACHINE_ID} {
             proxy_pass http://mcp_server/dashboard;
         }
 
-        location /8000/ {
+        location /8000/${MACHINE_ID} {
             proxy_pass http://mcp_server/;
         }
 
-        location /8080${OAUTH_TOKEN}/ {
+        location /8080/${OAUTH_TOKEN}/ {
             proxy_pass http://code_server/;
         }
 
-        location / {
+        location /${MACHINE_ID}/ {
             proxy_pass http://dev_server/;
         }
 

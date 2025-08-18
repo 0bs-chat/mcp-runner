@@ -56,7 +56,7 @@ async function main() {
   mcpServerProcess.stderr?.pipe(process.stderr, { end: false });
 
   const nginxProcess = exec(
-    `envsubst '$OAUTH_TOKEN' < nginx.conf.template > /etc/nginx/nginx.conf && nginx -g "daemon off;"`,
+    `envsubst '$OAUTH_TOKEN $MACHINE_ID' < nginx.conf.template > /etc/nginx/nginx.conf && nginx -g "daemon off;"`,
     {
       cwd: "/mcp-runner/vibz",
       env: { ...process.env },
