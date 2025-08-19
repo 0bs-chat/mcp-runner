@@ -13,6 +13,18 @@ http {
         ""      close;
     }
 
+    # Strip fly_force_instance_id from proxied query strings
+    map $args $args_without_fly_force_instance_id {
+        ~*^(.*?)(?:^|&)fly_force_instance_id=[^&]*(?:&(.*))?$ "$1$2";
+        default $args;
+    }
+
+    # Add leading ? only if there are remaining params
+    map $args_without_fly_force_instance_id $request_qs {
+        ""      "";
+        default  "?$args_without_fly_force_instance_id";
+    }
+
     upstream code_server {
         server 127.0.0.1:8080;
     }
@@ -29,6 +41,17 @@ http {
         listen 80;
         server_name _;
 
+        # Machine id injected at startup
+        set $fly_self_machine_id ${MACHINE_ID};
+
+        # If routing to a different machine is requested, ask Fly Proxy to replay there
+        if ($arg_fly_force_instance_id) {
+            if ($arg_fly_force_instance_id != $fly_self_machine_id) {
+                add_header fly-replay "instance=$arg_fly_force_instance_id" always;
+                return 409;
+            }
+        }
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -44,23 +67,23 @@ http {
         access_log off;
 
         location = /sse {
-            proxy_pass http://mcp_server/mcp/;
+            proxy_pass http://mcp_server/mcp/$request_qs;
         }
 
         location = /dashboard {
-            proxy_pass http://mcp_server/dashboard;
+            proxy_pass http://mcp_server/dashboard$request_qs;
         }
 
         location /8000/ {
-            proxy_pass http://mcp_server/;
+            proxy_pass http://mcp_server$uri$request_qs;
         }
 
         location /8080/${OAUTH_TOKEN}/ {
-            proxy_pass http://code_server/;
+            proxy_pass http://code_server$uri$request_qs;
         }
 
         location / {
-            proxy_pass http://dev_server/;
+            proxy_pass http://dev_server$uri$request_qs;
         }
 
         error_page 401 = /_unauthorized;
