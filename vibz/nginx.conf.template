@@ -55,7 +55,7 @@ http {
             proxy_pass http://mcp_server/;
         }
 
-        location /8080/${OAUTH_TOKEN}/ {
+        location /8080/${MACHINE_ID}/${OAUTH_TOKEN}/ {
             proxy_pass http://code_server/;
         }
 
