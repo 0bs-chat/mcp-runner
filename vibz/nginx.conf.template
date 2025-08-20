@@ -22,7 +22,7 @@ http {
     }
 
     upstream mcp_server {
-        server 0.0.0.0:8000;
+        server 127.0.0.1:8000;
     }
 
     upstream fallback_server {
@@ -68,7 +68,7 @@ http {
         }
 
         location /${FLY_MACHINE_ID}/ {
-            proxy_pass https://${FLY_APP_NAME}.fly.dev/;
+            proxy_pass http://${FLY_APP_NAME}.internal:80/;
             proxy_set_header fly-force-instance-id ${FLY_MACHINE_ID};
         }
 
