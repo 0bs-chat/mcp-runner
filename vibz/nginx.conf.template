@@ -41,7 +41,6 @@ http {
         proxy_set_header Connection $connection_upgrade;
         proxy_buffering off;
         proxy_set_header Authorization $auth_header;
-        access_log off;
 
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
@@ -60,7 +59,7 @@ http {
         }
 
         location / {
-            proxy_pass http://dev_server/;
+            proxy_pass http://dev_server;
         }
 
         error_page 401 = /_unauthorized;
