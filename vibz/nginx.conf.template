@@ -43,14 +43,16 @@ http {
         proxy_set_header Authorization $auth_header;
         access_log off;
 
-
-
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
         }
 
-        location = /dashboard/ {
+        location = /dashboard {
             proxy_pass http://mcp_server/dashboard;
+        }
+
+        location /8000/ {
+            proxy_pass http://mcp_server/;
         }
 
         location /8080/${OAUTH_TOKEN}/ {
