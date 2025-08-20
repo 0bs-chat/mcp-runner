@@ -25,6 +25,10 @@ http {
         server 0.0.0.0:8000;
     }
 
+    upstream fallback_server {
+        server 127.0.0.1;
+    }
+
     server {
         listen 80;
         server_name _;
@@ -42,32 +46,31 @@ http {
         proxy_buffering off;
         proxy_set_header Authorization $auth_header;
 
-        location = /sse {
+        # If first path segment is not the machine ID, strip it and forward to localhost:3002
+        location ~ ^/(?!${FLY_MACHINE_ID})[^/]+(/.*)?$ {
+            set $rest $1;
+            if ($rest = "") { set $rest "/"; }
+            proxy_pass http://fallback_server$rest;
+        }
+
+        location = /${FLY_MACHINE_ID}/sse {
             proxy_pass http://mcp_server/mcp/;
         }
 
-        location = /dashboard {
+        location = /${FLY_MACHINE_ID}/dashboard {
             proxy_pass http://mcp_server/dashboard;
         }
 
-        location /8000/ {
+        location /${FLY_MACHINE_ID}/8000/ {
             proxy_pass http://mcp_server/;
         }
 
-        location /8080/${OAUTH_TOKEN}/ {
+        location /${FLY_MACHINE_ID}/8080/${OAUTH_TOKEN}/ {
             proxy_pass http://code_server/;
         }
 
-        location / {
-            proxy_intercept_errors on;
-            error_page 404 = @strip_first;
+        location /${FLY_MACHINE_ID}/ {
             proxy_pass http://dev_server/;
-        }
-
-        location @strip_first {
-            rewrite ^/[^/]+/(.*)$ /$1 break;
-            rewrite ^/[^/]+/?$ / break;
-            proxy_pass http://dev_server;
         }
 
         error_page 401 = /_unauthorized;
