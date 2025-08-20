@@ -78,7 +78,7 @@ http {
 
         location @strip_fallback {
             if ($request_uri ~ ^/${FLY_MACHINE_ID}(/|$)) {
-                return 502;
+                return 404;
             }
             rewrite ^/[^/]+(.*)$ /$1 break;
             proxy_pass http://fallback_server;
