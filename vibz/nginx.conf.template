@@ -47,9 +47,6 @@ http {
         proxy_set_header Authorization $auth_header;
         proxy_intercept_errors on;
 
-        error_page 404 = @strip_fallback;
-        error_page 502 = @strip_fallback;
-
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
         }
@@ -70,19 +67,15 @@ http {
             proxy_pass http://dev_server/;
         }
 
+        location /${FLY_MACHINE_ID}/ {
+            proxy_pass http://localhost/;
+        }
+
         error_page 401 = /_unauthorized;
         location = /_unauthorized {
             internal;
             add_header Content-Type application/json;
             return 401 '{"error":"unauthorized"}';
-        }
-
-        location @strip_fallback {
-            if ($request_uri ~ ^/${FLY_MACHINE_ID}(/|$)) {
-                return 404;
-            }
-            rewrite ^/[^/]+(.*)$ /$1 break;
-            proxy_pass http://fallback_server;
         }
     }
 }
