@@ -59,7 +59,7 @@ http {
             proxy_pass http://code_server/;
         }
 
-        location /${FLY_MACHINE_ID}/ {
+        location ^~ /${FLY_MACHINE_ID}/ {
             proxy_pass http://dev_server/;
         }
 
