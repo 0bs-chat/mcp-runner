@@ -42,6 +42,12 @@ http {
         proxy_buffering off;
         proxy_set_header Authorization $auth_header;
 
+        location ~ ^/([^/]+)/ {
+            set $req_machine_id $1;
+            # proxy_pass http://$req_machine_id.vm.${FLY_APP_NAME}.internal;
+            proxy_pass http://localhost/;
+        }
+
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
         }
