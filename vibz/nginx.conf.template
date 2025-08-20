@@ -43,24 +43,42 @@ http {
         proxy_set_header Authorization $auth_header;
         access_log off;
 
-        # SSE endpoint for MCP server
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
+            proxy_intercept_errors on;
+            error_page 502 503 504 = @fallback_vm;
         }
 
-        # Dashboard endpoint - route to MCP server
-        location ~ ^/dashboard/([^/]+)/?$ {
+        location = /dashboard/${FLY_MACHINE_ID}/ {
             proxy_pass http://mcp_server/dashboard;
+            proxy_intercept_errors on;
+            error_page 502 503 504 = @fallback_vm;
         }
 
-        # Code server endpoint - route to VS Code server
-        location ~ ^/8080/([^/]+)/ {
+        location /8080/${FLY_MACHINE_ID}/ {
             proxy_pass http://code_server/;
+            proxy_intercept_errors on;
+            error_page 502 503 504 = @fallback_vm;
         }
 
-        # Preview endpoint - route to dev server
-        location ~ ^/([^/]+)/ {
+        location /${FLY_MACHINE_ID}/ {
             proxy_pass http://dev_server/;
+            proxy_intercept_errors on;
+            error_page 502 503 504 = @fallback_vm;
+        }
+
+        # Fallback location for internal VM routing
+        location @fallback_vm {
+            internal;
+            set $req_machine_id $arg_machine_id;
+            if ($req_machine_id = "") {
+                set $req_machine_id $1;
+            }
+            proxy_pass http://$req_machine_id.vm.${FLY_APP_NAME}.internal$request_uri;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
         }
 
         error_page 401 = /_unauthorized;
