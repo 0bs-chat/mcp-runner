@@ -18,6 +18,7 @@ const router = createRouter({
   scrollRestoration: true,
   defaultStructuralSharing: true,
   defaultPreloadStaleTime: 0,
+  basepath: `/${import.meta.env.VITE_FLY_MACHINE_ID}/preview/`,
 });
 
 // Register the router instance for type safety
