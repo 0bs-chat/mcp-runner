@@ -17,7 +17,6 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
   },
-  base: `${process.env.FLY_MACHINE_ID}/preview/`,
   server: {
     allowedHosts: true,
   },
