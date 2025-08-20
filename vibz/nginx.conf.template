@@ -47,25 +47,25 @@ http {
         proxy_set_header Authorization $auth_header;
         proxy_intercept_errors on;
 
-        error_page 502 = @strip_fallback;
+        error_page 404 = @strip_fallback;
 
-        location = /${FLY_MACHINE_ID}/sse {
+        location = /sse {
             proxy_pass http://mcp_server/mcp/;
         }
 
-        location = /${FLY_MACHINE_ID}/dashboard {
+        location = /dashboard {
             proxy_pass http://mcp_server/dashboard;
         }
 
-        location /${FLY_MACHINE_ID}/8000/ {
+        location /8000/ {
             proxy_pass http://mcp_server/;
         }
 
-        location /${FLY_MACHINE_ID}/8080/${OAUTH_TOKEN}/ {
+        location /8080/${OAUTH_TOKEN}/ {
             proxy_pass http://code_server/;
         }
 
-        location /${FLY_MACHINE_ID}/ {
+        location / {
             proxy_pass http://dev_server/;
         }
 
