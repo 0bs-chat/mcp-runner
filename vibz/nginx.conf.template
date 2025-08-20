@@ -3,6 +3,7 @@ events {
 }
 
 http {
+    resolver fdaa::3;
     map $arg_auth $auth_header {
         ""      $http_authorization;
         default "Bearer $arg_auth";
