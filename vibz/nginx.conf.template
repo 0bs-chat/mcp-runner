@@ -54,11 +54,11 @@ http {
         }
 
         location /8080/${OAUTH_TOKEN}/ {
-            proxy_pass http://dev_server/;
+            proxy_pass http://code_server/;
         }
 
         location / {
-            proxy_pass http://dev_server$1;
+            proxy_pass http://dev_server/;
         }
 
         error_page 401 = /_unauthorized;
