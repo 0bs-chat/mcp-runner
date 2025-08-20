@@ -45,40 +45,20 @@ http {
 
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
-            proxy_intercept_errors on;
-            error_page 502 503 504 = @fallback_vm;
         }
 
         location = /dashboard/${FLY_MACHINE_ID}/ {
             proxy_pass http://mcp_server/dashboard;
-            proxy_intercept_errors on;
-            error_page 502 503 504 = @fallback_vm;
         }
 
-        location /8080/${FLY_MACHINE_ID}/ {
-            proxy_pass http://code_server/;
-            proxy_intercept_errors on;
-            error_page 502 503 504 = @fallback_vm;
+        location /8000/${FLY_MACHINE_ID}/ {
+            proxy_pass http://mcp_server/;
         }
+
+        location /8080/${FLY_MACHINE_ID}/${OAUTH_TOKEN}/
 
         location /${FLY_MACHINE_ID}/ {
-            proxy_pass http://dev_server/;
-            proxy_intercept_errors on;
-            error_page 502 503 504 = @fallback_vm;
-        }
-
-        # Fallback location for internal VM routing
-        location @fallback_vm {
-            internal;
-            set $req_machine_id $arg_machine_id;
-            if ($req_machine_id = "") {
-                set $req_machine_id $1;
-            }
-            proxy_pass http://$req_machine_id.vm.${FLY_APP_NAME}.internal$request_uri;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_pass http://dev_server$1;
         }
 
         error_page 401 = /_unauthorized;
