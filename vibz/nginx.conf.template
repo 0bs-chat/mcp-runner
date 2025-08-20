@@ -82,7 +82,7 @@ http {
                 return 404;
             }
             rewrite ^/[^/]+(.*)$ /$1 break;
-            proxy_pass http://fallback_server/;
+            proxy_pass http://fallback_server;
         }
     }
 }
