@@ -43,26 +43,24 @@ http {
         proxy_set_header Authorization $auth_header;
         access_log off;
 
+        # SSE endpoint for MCP server
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
         }
 
-        location = /dashboard/${FLY_MACHINE_ID}/ {
+        # Dashboard endpoint - route to MCP server
+        location ~ ^/dashboard/([^/]+)/?$ {
             proxy_pass http://mcp_server/dashboard;
         }
 
-        location /8000/${FLY_MACHINE_ID}/ {
-            proxy_pass http://mcp_server/;
+        # Code server endpoint - route to VS Code server
+        location ~ ^/8080/([^/]+)/ {
+            proxy_pass http://code_server/;
         }
 
-        location /${FLY_MACHINE_ID}/ {
-            proxy_pass http://dev_server$1;
-        }
-
+        # Preview endpoint - route to dev server
         location ~ ^/([^/]+)/ {
-            set $req_machine_id $1;
-            rewrite ^/([^/])/(.*)$ /$2 break;
-            proxy_pass http://$req_machine_id.vm.${FLY_APP_NAME}.internal;
+            proxy_pass http://dev_server/;
         }
 
         error_page 401 = /_unauthorized;
