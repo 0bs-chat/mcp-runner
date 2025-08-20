@@ -48,6 +48,7 @@ http {
         proxy_intercept_errors on;
 
         error_page 404 = @strip_fallback;
+        error_page 502 = @strip_fallback;
 
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
@@ -81,7 +82,7 @@ http {
                 return 404;
             }
             rewrite ^/[^/]+(.*)$ /$1 break;
-            proxy_pass http://fallback_server;
+            proxy_pass http://fallback_server/;
         }
     }
 }
