@@ -59,7 +59,7 @@ http {
         }
 
         location / {
-            proxy_pass http://dev_server;
+            proxy_pass http://dev_server/;
         }
 
         error_page 401 = /_unauthorized;
