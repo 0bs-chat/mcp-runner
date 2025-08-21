@@ -23,6 +23,21 @@ function checkConvexDeployKey(): boolean {
   }
 }
 
+function checkViteFlyMachineId(): boolean {
+  const envPath = `${process.env.BASE_DIR}/.env.local`;
+
+  if (!existsSync(envPath)) {
+    return false;
+  }
+
+  try {
+    const envContent = readFileSync(envPath, "utf-8");
+    return envContent.includes("VITE_FLY_MACHINE_ID=");
+  } catch (error) {
+    return false;
+  }
+}
+
 function startServer() {
   const codeServerProcess = exec(
     `code-server --auth none --port 8080 --host 0.0.0.0 "${process.env.BASE_DIR}"`,
@@ -31,7 +46,7 @@ function startServer() {
   codeServerProcess.stdout?.pipe(process.stdout, { end: false });
   codeServerProcess.stderr?.pipe(process.stderr, { end: false });
 
-  const devServerProcess = exec(`VITE_FLY_MACHINE_ID=${process.env.FLY_MACHINE_ID} bun dev`, { cwd: process.env.BASE_DIR });
+  const devServerProcess = exec(`bun dev`, { cwd: process.env.BASE_DIR });
   devServerProcess.stdout?.pipe(process.stdout, { end: false });
   devServerProcess.stderr?.pipe(process.stderr, { end: false });
 
@@ -75,10 +90,18 @@ async function main() {
     "CONVEX_DEPLOY_KEY not found in environment or .env.local, executing steps 2-6",
   );
 
-  // 2. Write CONVEX_DEPLOY_KEY to .env.local
+  // 2. Write CONVEX_DEPLOY_KEY and VITE_FLY_MACHINE_ID to .env.local
   const envPath = `${process.env.BASE_DIR}/.env.local`;
-  const envLine = `CONVEX_DEPLOY_KEY=${CONVEX_DEPLOY_KEY}`;
-  writeFileSync(envPath, envLine);
+  let envContent = `CONVEX_DEPLOY_KEY=${CONVEX_DEPLOY_KEY}`;
+
+  // Check and set VITE_FLY_MACHINE_ID
+  const hasViteFlyMachineId = checkViteFlyMachineId();
+  if (!hasViteFlyMachineId) {
+    const flyMachineId = process.env.FLY_MACHINE_ID || 'default';
+    envContent += `\nVITE_FLY_MACHINE_ID=${flyMachineId}`;
+  }
+
+  writeFileSync(envPath, envContent);
 
   // 3. Set environment variables for auth
   execSync("bunx convex env set SITE_URL http://localhost:3000", {
