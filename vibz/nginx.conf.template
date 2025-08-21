@@ -3,7 +3,7 @@ events {
 }
 
 http {
-    resolver 1.1.1.1 8.8.8.8 valid=300s;
+    resolver [fdaa::3] ipv6=on;
 
     map $arg_auth $auth_header {
         ""      $http_authorization;
@@ -66,8 +66,8 @@ http {
             proxy_pass http://dev_server/;
         }
 
-        location ~ ^/([^/]+)(?:/(.*))?$ {
-            proxy_pass http://$1.vm.${FLY_APP_NAME}.internal:80/$2$is_args$args;
+        location ~ ^/([^/]+)(/.*)$ {
+            proxy_pass http://$1.vm.${FLY_APP_NAME}.internal:80$2$is_args$args;
         }
 
         error_page 401 = /_unauthorized;
