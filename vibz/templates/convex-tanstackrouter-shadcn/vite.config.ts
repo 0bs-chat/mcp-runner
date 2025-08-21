@@ -17,6 +17,7 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
   },
+  base: `/${import.meta.env.VITE_FLY_MACHINE_ID}/preview/`,
   server: {
     allowedHosts: true,
   },

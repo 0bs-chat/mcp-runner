@@ -102,4 +102,4 @@ RUN cd / && sleep 1 &&git clone https://github.com/0bs-chat/mcp-runner.git && \
 WORKDIR /mcp-runner/vibz
 CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bun run start.ts'
 # docker build -t registry.fly.io/still-smoke-7835:v2 -f services/mcps/vibz/Dockerfile . --push
-# sudo docker run -it -p 80:80 -e CONVEX_DEPLOY_KEY=$CONVEX_DEPLOY_KEY registry.fly.io/still-smoke-7835:v2
+# sudo docker run -it -p 80:80 -e CONVEX_DEPLOY_KEY=$CONVEX_DEPLOY_KEY -e OAUTH_TOKEN=test -e FLY_MACHINE_ID=t123 registry.fly.io/still-smoke-7835
