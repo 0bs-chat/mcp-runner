@@ -3,7 +3,8 @@ events {
 }
 
 http {
-    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    # DNS resolver for Fly.io internal DNS
+    resolver 8.8.8.8 8.8.4.4 fdaa::3 valid=300s ipv6=off;
     resolver_timeout 5s;
 
     map $arg_auth $auth_header {
@@ -17,19 +18,19 @@ http {
     }
 
     upstream code_server {
-        server 127.0.0.1:8080;
+        server 127.0.0.1:8080 fail_timeout=10s;
     }
 
     upstream dev_server {
-        server 127.0.0.1:3000;
+        server 127.0.0.1:3000 fail_timeout=10s;
     }
 
     upstream mcp_server {
-        server 127.0.0.1:8000;
+        server 127.0.0.1:8000 fail_timeout=10s;
     }
 
     upstream fallback_server {
-        server 127.0.0.1;
+        server 127.0.0.1 fail_timeout=10s;
     }
 
     server {
@@ -40,15 +41,17 @@ http {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_connect_timeout 5s;
-        proxy_send_timeout 90s;
-        proxy_read_timeout 90s;
+        # Connection and timeout settings optimized for Fly.io
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
         proxy_buffering off;
         proxy_set_header Authorization $auth_header;
         proxy_intercept_errors on;
+        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
 
         location = /sse {
             proxy_pass http://mcp_server/mcp/;
@@ -73,6 +76,12 @@ http {
         location ~ ^/([^/]+)(?:/(.*))?$ {
             proxy_set_header fly-force-instance-id $1;
             proxy_pass http://${FLY_APP_NAME}.fly.dev:80/$2$is_args$args;
+            proxy_connect_timeout 15s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
+            proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+            proxy_next_upstream_tries 3;
+            proxy_next_upstream_timeout 30s;
         }
 
         error_page 401 = /_unauthorized;
