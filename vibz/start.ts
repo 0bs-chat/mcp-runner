@@ -31,7 +31,7 @@ function startServer() {
   codeServerProcess.stdout?.pipe(process.stdout, { end: false });
   codeServerProcess.stderr?.pipe(process.stderr, { end: false });
 
-  const devServerProcess = exec(`bun dev`, { cwd: process.env.BASE_DIR });
+  const devServerProcess = exec(`VITE_FLY_MACHINE_ID=${process.env.FLY_MACHINE_ID} bun dev`, { cwd: process.env.BASE_DIR });
   devServerProcess.stdout?.pipe(process.stdout, { end: false });
   devServerProcess.stderr?.pipe(process.stderr, { end: false });
 
