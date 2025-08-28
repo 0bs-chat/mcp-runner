@@ -514,33 +514,33 @@ function SearchFilters() {
 
 - ALWAYS use the new function syntax for Convex functions. For example:
   `typescript
-  import { query } from "./_generated/server";
-  import { v } from "convex/values";
-  export const f = query({
-      args: {},
-      returns: v.null(),
-      handler: async (ctx, args) => {
-      // Function body
-      },
-  });
-  `
+import { query } from "./_generated/server";
+import { v } from "convex/values";
+export const f = query({
+    args: {},
+    returns: v.null(),
+    handler: async (ctx, args) => {
+    // Function body
+    },
+});
+`
 
 ### Http endpoint syntax
 
 - HTTP endpoints are defined in `convex/http.ts` and require an `httpAction` decorator. For example:
   `typescript
-  import { httpRouter } from "convex/server";
-  import { httpAction } from "./_generated/server";
-  const http = httpRouter();
-  http.route({
-      path: "/echo",
-      method: "POST",
-      handler: httpAction(async (ctx, req) => {
-      const body = await req.bytes();
-      return new Response(body, { status: 200 });
-      }),
-  });
-  `
+import { httpRouter } from "convex/server";
+import { httpAction } from "./_generated/server";
+const http = httpRouter();
+http.route({
+    path: "/echo",
+    method: "POST",
+    handler: httpAction(async (ctx, req) => {
+    const body = await req.bytes();
+    return new Response(body, { status: 200 });
+    }),
+});
+`
 - HTTP endpoints are always registered at the exact path you specify in the `path` field. For example, if you specify `/api/someRoute`, the endpoint will be registered at `/api/someRoute`.
 
 ### Validators

@@ -97,7 +97,7 @@ async function main() {
   // Check and set VITE_FLY_MACHINE_ID
   const hasViteFlyMachineId = checkViteFlyMachineId();
   if (!hasViteFlyMachineId) {
-    const flyMachineId = process.env.FLY_MACHINE_ID || 'default';
+    const flyMachineId = process.env.FLY_MACHINE_ID || "default";
     envContent += `\nVITE_FLY_MACHINE_ID=${flyMachineId}`;
   }
 
