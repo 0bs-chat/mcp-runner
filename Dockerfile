@@ -81,7 +81,7 @@ ENV MCP_COMMAND="bunx -y github-repo-mcp"
 ENV IDLE_TIMEOUT_MINS=15
 ENV OAUTH_TOKEN="sheesh"
 EXPOSE 8000
-CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bun run ./supergateway/dist/index.js --stdio '${MCP_COMMAND}' --outputTransport streamableHttp --auth $OAUTH_TOKEN --base-url http://0.0.0.0:8000 --healthEndpoint /healthz"]
+CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bun run ./supergateway/dist/index.js --stdio '${MCP_COMMAND}' --auth $OAUTH_TOKEN --base-url http://0.0.0.0:8000 --healthEndpoint /healthz --ssePath /mcp --data_path --data_dir"]
 
-# cd services/mcps/ && docker build -t registry.fly.io/floral-brook-444 -f Dockerfile . --push
+# fly auth docker && cd services/mcps/ && docker build -t registry.fly.io/floral-brook-444 -f Dockerfile . --push
 # sudo docker run -it -e MCP_COMMAND="bunx github-repo-mcp" -p 8000:8000 registry.fly.io/floral-brook-444

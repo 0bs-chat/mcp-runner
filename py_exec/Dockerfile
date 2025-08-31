@@ -35,6 +35,6 @@ RUN uv sync
 
 EXPOSE 8000
 
-CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bun run ./supergateway/dist/index.js --stdio 'uv run main.py' --outputTransport streamableHttp --auth $OAUTH_TOKEN --base-url http://0.0.0.0:8000 --healthEndpoint /healthz"]
+CMD ["/bin/bash", "-c", ". $NVM_DIR/nvm.sh && nvm use default && bun run ./supergateway/dist/index.js --stdio 'uv run main.py' --auth $OAUTH_TOKEN --base-url http://0.0.0.0:8000 --healthEndpoint /healthz --ssePath /mcp --data_path --data_dir"]
 # cd services/mcps/ && docker build -t registry.fly.io/bitter-leaf-7106 -f py_exec/Dockerfile . --push
 # sudo docker run -p 8000:8000 registry.fly.io/bitter-leaf-7106
