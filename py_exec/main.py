@@ -15,7 +15,7 @@ os.makedirs("/mnt", exist_ok=True)
 executor = JupyterCodeExecutor(kernel_name="python3", timeout=60, output_dir="/mnt")
 
 @mcp.tool()
-def execute_code(code: str):
+async def execute_code(code: str):
   """
   Args:
     code: The Python code to execute.
@@ -38,7 +38,8 @@ def execute_code(code: str):
   code_block = CodeBlock(code=code, language="python")
 
   try:
-    result = executor.execute_code_blocks([code_block], cancel_token)
+    await executor.start()
+    result = await executor.execute_code_blocks([code_block], cancel_token)
   except Exception as e:
     raise Exception(f"Execution error: {e}")
 
@@ -55,15 +56,5 @@ def execute_code(code: str):
 
   return response
 
-@mcp.tool()
-def restart_executor():
-  """
-  Restarts the JupyterCodeExecutor.
-  """
-  executor.stop()
-  executor.start()
-  return "Executor restarted."
-
 if __name__ == "__main__":
-  executor.start()
   mcp.run(transport="stdio")
