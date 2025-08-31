@@ -139,7 +139,7 @@ async def health_check(request: Request):
     return JSONResponse({"status": "ok"})
 
 if __name__ == "__main__":
-  app = mcp.http_app(transport="sse")
+  app = mcp.http_app(transport="http")
   app.add_middleware(TokenAuthMiddleware)
   import uvicorn
   uvicorn.run(app, host="0.0.0.0", port=8000)

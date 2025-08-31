@@ -14,5 +14,5 @@ RUN uv sync
 EXPOSE 8000
 
 CMD ["uv", "run", "main.py"]
-# cd services/mcps/py_exec/ && docker build -t registry.fly.io/bitter-leaf-7106:v1 . --push
-# sudo docker run -p 8000:8000 registry.fly.io/bitter-leaf-7106:v1
+# cd services/mcps/py_exec/ && docker build -t registry.fly.io/bitter-leaf-7106 . --push
+# sudo docker run -p 8000:8000 registry.fly.io/bitter-leaf-7106
