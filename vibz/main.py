@@ -124,9 +124,9 @@ MANDATORY: Create/edit web application files. You MUST provide actual code in th
 Use this tool to build complete, production-ready web applications using Convex + TanStack Router + shadcn/ui.
 
 Args:
-    project_name: str : A descriptive name for the project.
-    planning: str : A brief planning statement.
+    planning: str : A detailed step by step plan of what you are going to build.
     code: {'name': str, 'content': str, 'type': 'new' | 'edit'}[] : List of code files.
+    commit_message: str : A commit message for the changes.
 
 FILE TYPES:
 - `type: 'new'` = Complete file content (creates/overwrites file)
@@ -173,7 +173,7 @@ FILE TYPES:
 
 FAIL if code array is empty or contains placeholder text.
 """)
-def code_project(project_name: str, planning: str, code: List[Dict[str, str]], commit_message: str):
+def code_project(planning: str, code: List[Dict[str, str]], commit_message: str):
     allow_paths = ["src", "convex", "README.md"]
     exclude_paths = [
         "src/routes/__root.tsx", "src/main.tsx", "src/components/ui", "src/styles.css",
@@ -252,7 +252,7 @@ def install_packages(packages: List[str]):
         return {"status": "error", "message": str(e), "packages": packages}
 
 @mcp.tool(description="""
-Read existing file contents to understand current code before making edits.
+Read existing file contents to understand current code, avoid using this tool first.
 
 Args:
     file_paths: str[] : Relative paths to files to read, if you want to read multiple files, just pass in a list of paths
