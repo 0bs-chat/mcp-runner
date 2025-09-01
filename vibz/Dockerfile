@@ -86,8 +86,8 @@ ENV TEMPLATE_DIR=/mcp-runner/vibz/templates/convex-tanstackrouter-shadcn
 RUN git config --global user.email "vibz@0bs.chat" && \
   git config --global user.name "VibzBot"
 
-RUN cd / && sleep 1 &&git clone https://github.com/0bs-chat/mcp-runner.git && \
-  cd /mcp-runner/vibz && \
+COPY ./services/mcps/vibz /mcp-runner/vibz
+RUN cd /mcp-runner/vibz && \
   . $NVM_DIR/nvm.sh && \
   nvm use default && \
   uv sync && \

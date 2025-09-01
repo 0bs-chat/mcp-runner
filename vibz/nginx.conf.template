@@ -47,7 +47,7 @@ http {
         proxy_intercept_errors on;
 
         location = /mcp {
-            proxy_pass http://mcp_server/mcp/;
+            proxy_pass http://mcp_server/mcp;
         }
 
         location = /dashboard {
