@@ -100,6 +100,6 @@ RUN cd /mcp-runner/vibz && \
   echo "Template copied and git repository initialized"
 
 WORKDIR /mcp-runner/vibz
-CMD /bin/bash -c 'source $NVM_DIR/nvm.sh && git pull && nvm use default && bun run start.ts'
+CMD ["/bin/bash", "-c", "source $NVM_DIR/nvm.sh && nvm use default && bun run start.ts"]
 # docker build -t registry.fly.io/still-smoke-7835 -f services/mcps/vibz/Dockerfile . --push
 # sudo docker run -it -p 80:80 -e CONVEX_DEPLOY_KEY=$CONVEX_DEPLOY_KEY -e OAUTH_TOKEN=test -e FLY_MACHINE_ID=t123 registry.fly.io/still-smoke-7835

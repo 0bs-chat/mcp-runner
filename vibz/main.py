@@ -8,6 +8,13 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, HTMLResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import mimetypes
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+)
+logger = logging.getLogger("vibz")
 
 class TokenAuthMiddleware(BaseHTTPMiddleware):
     """Middleware to verify Bearer token authorization"""
@@ -80,11 +87,9 @@ def run_lint() -> str:
 
 def get_diff() -> str:
     try:
-        # result = subprocess.run(["git", "add", "."], cwd=BASE_DIR, capture_output=True, text=True)
-        # result = subprocess.run(["git", "diff", "--staged", "|", "cat"], cwd=BASE_DIR, capture_output=True, text=True)
-        repo = git.Repo(BASE_DIR)
-        result = repo.git.diff("--staged", "|", "cat")
-        return result or "(No uncommitted changes)"
+        subprocess.run(["git", "add", "."], cwd=BASE_DIR, capture_output=True, text=True)
+        result = subprocess.run(["git", "diff", "--staged"], cwd=BASE_DIR, capture_output=True, text=True)
+        return result.stdout
     except Exception as e:
         return f"Error getting diff: {e}"
 
