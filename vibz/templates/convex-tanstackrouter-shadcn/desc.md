@@ -41,6 +41,22 @@
 - TypeScript linting enabled
 - Existing project structure in `src/` with components, routes, hooks, lib with the backend defined in `convex/` folder with schema and auth configured.
 
+### Important Import Path Configuration
+
+**CRITICAL**: When importing from the Convex `_generated` folder in your frontend code (typically from `src/` directory), always use relative paths with proper backtracking:
+
+```typescript
+// ✅ CORRECT - Use relative path with ../../ to backtrack to convex folder
+import { api } from "../../convex/_generated/api";
+import { useQuery } from "../../convex/_generated/react";
+
+// ❌ WRONG - This will break the application
+import { api } from "convex/_generated/api";
+import { useQuery } from "convex/_generated/react";
+```
+
+**Why this matters**: The `convex/_generated/` path assumes a different directory structure than what exists in this template. Using the incorrect import path will result in module resolution errors and prevent your application from building or running properly.
+
 ## Template Structure
 
 .
