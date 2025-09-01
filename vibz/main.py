@@ -66,6 +66,27 @@ template_description = Path(f"{TEMPLATE_DIR}/desc.md").read_text()
 
 lint_errors: Set[str] = set()
 
+def apply_diff(diff_content: str, file_path: str) -> None:
+    """Apply diff using git apply."""
+    import tempfile
+    
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.patch', delete=False) as f:
+        f.write(diff_content)
+        patch_file = f.name
+    
+    try:
+        result = subprocess.run(
+            ["git", "apply", "--verbose", patch_file],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode != 0:
+            raise Exception(f"Diff failed for {file_path}: {result.stderr}")
+    finally:
+        os.unlink(patch_file)
+
 def git_stage_n_commit_response(commit_message: str) -> bool:
     try:
         repo = git.Repo(BASE_DIR)
@@ -108,19 +129,35 @@ Args:
     code: {'name': str, 'content': str, 'type': 'new' | 'edit'}[] : List of code files.
 
 FILE TYPES:
-- type: 'new' = Full file content (creates or overwrites). Use for: new files, substantial changes (>10 lines), replacing empty structures with complex ones, complete rewrites
-- type: 'edit' = GNU unified diff patch (modifies existing file). Use for: small targeted changes (<10 lines), fixing specific bugs, adding single functions
+- type: 'new' = Complete file content (creates/overwrites file)  
+- type: 'edit' = Unified diff patch (small changes only)
 
-EDIT TYPE DIFF FORMAT:
---- a/src/components/example.tsx
-+++ b/src/components/example.tsx
-@@ -10,7 +10,7 @@
- export function Example() {
-   const [count, setCount] = useState(0)
-   
--  return <div>Count: {count}</div>
-+  return <div className="font-bold">Count: {count}</div>
- }
+FOR DIFFS (type: 'edit'), format is as follows:
+
+Header lines: '--- a/filepath' and '+++ b/filepath' (NO \n at end)
+Range header: '@@ -start,count +start,count @@' (NO \n at end)  
+Context lines: start with space ' ' + content + '\n'
+Removed lines: start with '-' + content + '\n'
+Added lines: start with '+' + content + '\n'
+ALL content lines MUST end with \n (newline)
+
+Example diff output:
+--- a/convex/schema.ts
++++ b/convex/schema.ts
+@@ -1 +1,10 @@
+-const applicationTables = {};
++import { defineTable } from "convex/server";
++import { v } from "convex/values";
++
++const applicationTables = {
++  todos: defineTable({
++    userId: v.id("users"),
++    text: v.string(),
++    completed: v.boolean(),
++  }).index("by_user", ["userId"]),
++};
+
+If unsure about diff format, use type: 'new' with complete file content.
 
 FAIL if code array is empty or contains placeholder text.
 """)
@@ -162,46 +199,15 @@ def code_project(project_name: str, planning: str, code: List[Dict[str, str]], c
             file_type = file.get("type", "new")
             
             if file_type == "edit":
-                # Apply GNU diff patch
                 full_path = os.path.join(BASE_DIR, relative_path)
                 if not os.path.exists(full_path):
-                    return {"status": "error", "message": f"Cannot apply diff - file does not exist: {relative_path}"}
+                    return {"status": "error", "message": f"File does not exist: {relative_path}"}
 
-                # Create temporary patch file
-                patch_file = os.path.join(BASE_DIR, ".tmp_patch")
-                with open(patch_file, "w", encoding="utf-8") as f:
-                    f.write(file["content"])
-
-                # Apply the patch using git apply
-                result = subprocess.run(
-                    ["git", "apply", "--verbose", patch_file],
-                    cwd=BASE_DIR,
-                    capture_output=True,
-                    text=True
-                )
-                
-                # Clean up temp file
-                os.remove(patch_file)
-                
-                if result.returncode != 0:
-                    # Auto-retry: diff failed, try to reconstruct and overwrite the full file
-                    try:
-                        # Read the current file
-                        with open(full_path, "r", encoding="utf-8") as f:
-                            current_content = f.read()
-                        
-                        # Try to apply the patch manually to reconstruct the intended result
-                        # For now, we'll suggest the user switch to 'new' type
-                        return {
-                            "status": "error", 
-                            "message": f"Diff failed for {relative_path}: {result.stderr}. Auto-retry not implemented yet. Use type: 'new' with complete file content instead."
-                        }
-                    except Exception as e:
-                        return {
-                            "status": "error", 
-                            "message": f"Failed to apply diff to {relative_path} and auto-retry failed: {str(e)}"
-                        }
-                files_processed.append(f"{relative_path} (edited)")
+                try:
+                    apply_diff(file["content"], relative_path)
+                    files_processed.append(f"{relative_path} (edited)")
+                except Exception as e:
+                    return {"status": "error", "message": f"{str(e)}. Use type: 'new' instead."}
             else:
                 # Create/overwrite full file
                 path = os.path.join(BASE_DIR, relative_path)
