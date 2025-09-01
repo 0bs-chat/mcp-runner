@@ -129,35 +129,47 @@ Args:
     code: {'name': str, 'content': str, 'type': 'new' | 'edit'}[] : List of code files.
 
 FILE TYPES:
-- type: 'new' = Complete file content (creates/overwrites file)  
-- type: 'edit' = Unified diff patch (small changes only)
+- `type: 'new'` = Complete file content (creates/overwrites file)
+- `type: 'edit'` = Unified diff patch (small changes only)
 
-FOR DIFFS (type: 'edit'), format is as follows:
+## DIFF FORMAT (type: 'edit')
 
-Header lines: '--- a/filepath' and '+++ b/filepath' (NO \n at end)
-Range header: '@@ -start,count +start,count @@' (NO \n at end)  
-Context lines: start with space ' ' + content + '\n'
-Removed lines: start with '-' + content + '\n'
-Added lines: start with '+' + content + '\n'
-ALL content lines MUST end with \n (newline)
+### Structure:
+```
+--- a/filepath
++++ b/filepath
+@@ -start,count +start,count @@
+ context line
+-removed line
++added line
+ context line
+```
 
-Example diff output:
---- a/convex/schema.ts
-+++ b/convex/schema.ts
-@@ -1 +1,10 @@
--const applicationTables = {};
-+import { defineTable } from "convex/server";
-+import { v } from "convex/values";
-+
-+const applicationTables = {
-+  todos: defineTable({
-+    userId: v.id("users"),
-+    text: v.string(),
-+    completed: v.boolean(),
-+  }).index("by_user", ["userId"]),
-+};
+### Line Types:
+- `--- a/filepath` & `+++ b/filepath`: Headers (no trailing newline)
+- `@@ -start,count +start,count @@`: Range header with line numbers
+- ` ` (space): Context lines (unchanged)
+- `-`: Removed lines
+- `+`: Added lines
 
-If unsure about diff format, use type: 'new' with complete file content.
+### Requirements:
+- **CRITICAL**: Range header MUST include line numbers (e.g., `@@ -1,2 +1,2 @@`)
+- All content lines must end with `\n`
+- Include 2-3 context lines around changes
+- Header lines have NO trailing newline
+
+### Example:
+```diff
+--- a/src/routes/index.tsx
++++ b/src/routes/index.tsx
+@@ -1,2 +1,2 @@
+ import React from "react";
+-import { useState } from "react";
++import { useState, useEffect } from "react";
+ import { createFileRoute } from "@tanstack/react-router";
+```
+
+**Tip**: If unsure, use `type: 'new'` with complete file content.
 
 FAIL if code array is empty or contains placeholder text.
 """)
