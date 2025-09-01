@@ -59,10 +59,11 @@ template_description = Path(f"{TEMPLATE_DIR}/desc.md").read_text()
 
 lint_errors: Set[str] = set()
 
-def git_stage_response() -> bool:
+def git_stage_n_commit_response(commit_message: str) -> bool:
     try:
         repo = git.Repo(BASE_DIR)
         repo.git.add(".")
+        repo.git.commit("-m", commit_message)
         return True
     except Exception as e:
         print(f"Error committing to git: {e}")
@@ -79,15 +80,29 @@ def run_lint() -> str:
 
 def get_diff() -> str:
     try:
-        subprocess.run(["git", "commit", "-m", "feat: Generated code response"], cwd=BASE_DIR)
-        subprocess.run(["git", "add", "."], cwd=BASE_DIR)
-        result = subprocess.run(
-            ["git", "diff", "--staged"],
+        untracked_result = subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard"],
             cwd=BASE_DIR,
             capture_output=True,
             text=True,
         )
-        subprocess.run(["git", "commit", "-m", "user modified code"], cwd=BASE_DIR)
+        untracked_files = untracked_result.stdout.strip().split('\n') if untracked_result.stdout.strip() else []
+        
+        # Add intent to add for new files
+        if untracked_files:
+            subprocess.run(["git", "add", "-N"] + untracked_files, cwd=BASE_DIR)
+        
+        # Get the diff
+        result = subprocess.run(
+            ["git", "diff"],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+        )
+        
+        # Reset intent to add for new files
+        if untracked_files:
+            subprocess.run(["git", "reset", "--"] + untracked_files, cwd=BASE_DIR)
         return result.stdout or "(No uncommitted changes)"
     except Exception as e:
         return f"Error getting diff: {e}"
@@ -123,7 +138,7 @@ EDIT TYPE DIFF FORMAT:
 
 FAIL if code array is empty or contains placeholder text.
 """)
-def code_project(project_name: str, planning: str, code: List[Dict[str, str]]):
+def code_project(project_name: str, planning: str, code: List[Dict[str, str]], commit_message: str):
     allow_paths = ["src", "convex", "README.md"]
     exclude_paths = [
         "src/routes/__root.tsx", "src/main.tsx", "src/components/ui", "src/styles.css",
@@ -209,7 +224,7 @@ def code_project(project_name: str, planning: str, code: List[Dict[str, str]]):
                     f.write(file["content"])
                 files_processed.append(f"{relative_path} (created)")
 
-        git_stage_response()
+        git_stage_n_commit_response(commit_message)
         lint_output = run_lint()
         
         return {
@@ -236,7 +251,7 @@ def install_packages(packages: List[str]):
 Read existing file contents to understand current code before making edits.
 
 Args:
-    file_paths: str[] : Relative paths to files to read
+    file_paths: str[] : Relative paths to files to read, if you want to read multiple files, just pass in a list of paths
 """)
 def read_files(file_paths: List[str]):
     results = []
