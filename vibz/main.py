@@ -80,9 +80,11 @@ def run_lint() -> str:
 
 def get_diff() -> str:
     try:
-        result = subprocess.run(["git", "add", "."], cwd=BASE_DIR, capture_output=True, text=True)
-        result = subprocess.run(["git", "diff", "--staged", "|", "cat"], cwd=BASE_DIR, capture_output=True, text=True)
-        return result.stdout or "(No uncommitted changes)"
+        # result = subprocess.run(["git", "add", "."], cwd=BASE_DIR, capture_output=True, text=True)
+        # result = subprocess.run(["git", "diff", "--staged", "|", "cat"], cwd=BASE_DIR, capture_output=True, text=True)
+        repo = git.Repo(BASE_DIR)
+        result = repo.git.diff("--staged", "|", "cat")
+        return result or "(No uncommitted changes)"
     except Exception as e:
         return f"Error getting diff: {e}"
 
@@ -244,8 +246,14 @@ def read_files(file_paths: List[str]):
                 })
                 continue
 
+            # Check file extension for common text file types that might not be detected by mimetypes
+            file_extension = Path(full_path).suffix.lower()
+            text_extensions = {'.tsx', '.ts', '.jsx', '.js', '.json', '.md', '.txt', '.css', '.scss', '.html', '.xml', '.yaml', '.yml', '.toml', '.env', '.gitignore', '.dockerignore'}
+            
             mime_type, _ = mimetypes.guess_type(full_path)
-            if not mime_type or not mime_type.startswith("text/"):
+            is_text_file = (mime_type and mime_type.startswith("text/")) or file_extension in text_extensions
+            
+            if not is_text_file:
                 results.append({
                     "file_path": file_path,
                     "message": f"File is not a text file (detected mime type: {mime_type})"
