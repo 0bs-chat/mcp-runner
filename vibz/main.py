@@ -80,29 +80,8 @@ def run_lint() -> str:
 
 def get_diff() -> str:
     try:
-        untracked_result = subprocess.run(
-            ["git", "ls-files", "--others", "--exclude-standard"],
-            cwd=BASE_DIR,
-            capture_output=True,
-            text=True,
-        )
-        untracked_files = untracked_result.stdout.strip().split('\n') if untracked_result.stdout.strip() else []
-        
-        # Add intent to add for new files
-        if untracked_files:
-            subprocess.run(["git", "add", "-N"] + untracked_files, cwd=BASE_DIR)
-        
-        # Get the diff
-        result = subprocess.run(
-            ["git", "diff"],
-            cwd=BASE_DIR,
-            capture_output=True,
-            text=True,
-        )
-        
-        # Reset intent to add for new files
-        if untracked_files:
-            subprocess.run(["git", "reset", "--"] + untracked_files, cwd=BASE_DIR)
+        result = subprocess.run(["git", "add", "."], cwd=BASE_DIR, capture_output=True, text=True)
+        result = subprocess.run(["git", "diff", "--staged", "|", "cat"], cwd=BASE_DIR, capture_output=True, text=True)
         return result.stdout or "(No uncommitted changes)"
     except Exception as e:
         return f"Error getting diff: {e}"
