@@ -247,7 +247,7 @@ export class MCPCommandHandler {
               },
               m = (b: any) => {
                 const p = f.elements.size + 1;
-                f.elements.set(p, b), f.ids.set(b, p);
+                (f.elements.set(p, b), f.ids.set(b, p));
               };
             m(r);
             const g = (b: any, p: any) => {
@@ -277,7 +277,7 @@ export class MCPCommandHandler {
                 b.children.push(L);
               } else for (const Q of O.childNodes) g(b, Q);
             };
-            return g(f.root, r), normalizeSnapshot(f), f;
+            return (g(f.root, r), normalizeSnapshot(f), f);
           }
 
           function isHidden(element: Element): boolean {
@@ -371,14 +371,14 @@ export class MCPCommandHandler {
                     O += " " + $;
                   }
                 }
-                E.checked === "mixed" && (O += " [checked=mixed]"),
+                (E.checked === "mixed" && (O += " [checked=mixed]"),
                   E.checked === !0 && (O += " [checked]"),
                   E.disabled && (O += " [disabled]"),
                   E.expanded && (O += " [expanded]"),
                   E.level && (O += ` [level=${E.level}]`),
                   E.pressed === "mixed" && (O += " [pressed=mixed]"),
                   E.pressed === !0 && (O += " [pressed]"),
-                  E.selected === !0 && (O += " [selected]");
+                  E.selected === !0 && (O += " [selected]"));
                 {
                   const Q = a.ids.get(E.element);
                   Q && (O += ` [ref=s${a.generation}e${Q}]`);
