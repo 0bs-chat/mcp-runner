@@ -52,7 +52,7 @@ ENV LC_ALL=en_US.UTF-8
 
 # NVM/Node setup
 ENV NVM_DIR=/root/.nvm
-ENV NODE_VERSION=18
+ENV NODE_VERSION=20
 
 RUN apt-get update && apt-get install -y curl && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
